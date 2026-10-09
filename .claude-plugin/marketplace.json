@@ -1,0 +1,26 @@
+{
+  "name": "jacygao",
+  "owner": {
+    "name": "Jacy Gao"
+  },
+  "metadata": {
+    "description": "Skills for building software with coding agents, installed per project."
+  },
+  "plugins": [
+    {
+      "name": "core",
+      "source": "./plugins/core",
+      "description": "Writing issues, pull requests, specs and notes, and working issues through subagents, worktrees and verification. Every project."
+    },
+    {
+      "name": "greenfield",
+      "source": "./plugins/greenfield",
+      "description": "Planning and executing milestones from docs/specs/milestones.md, for a project being built from nothing."
+    },
+    {
+      "name": "brownfield",
+      "source": "./plugins/brownfield",
+      "description": "Triaging issues into release milestones and cutting releases, for a project that has shipped."
+    }
+  ]
+}

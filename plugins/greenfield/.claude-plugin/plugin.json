@@ -1,0 +1,8 @@
+{
+  "name": "greenfield",
+  "version": "0.0.1",
+  "description": "Planning and executing milestones from docs/specs/milestones.md, for a project being built from nothing.",
+  "author": {
+    "name": "Jacy Gao"
+  }
+}
