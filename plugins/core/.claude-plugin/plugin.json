@@ -1,8 +1,0 @@
-{
-  "name": "core",
-  "version": "0.0.1",
-  "description": "Writing issues, pull requests, specs and notes, and working issues through subagents, worktrees and verification. Every project.",
-  "author": {
-    "name": "Jacy Gao"
-  }
-}

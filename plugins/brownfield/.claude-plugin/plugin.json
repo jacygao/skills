@@ -1,8 +1,0 @@
-{
-  "name": "brownfield",
-  "version": "0.0.1",
-  "description": "Triaging issues into release milestones and cutting releases, for a project that has shipped.",
-  "author": {
-    "name": "Jacy Gao"
-  }
-}

@@ -1,6 +1,6 @@
 ---
 name: triaging-issues
-description: How open GitHub issues get a priority and a release milestone, and how a release's issues are made small enough for one pull request each. Load BEFORE triaging issues or planning a release.
+description: For a project that has shipped and tracks releases in GitHub milestones. How open GitHub issues get a priority and a release milestone, and how a release's issues are made small enough for one pull request each. Load BEFORE triaging issues or planning a release.
 user-invocable: true
 ---
 

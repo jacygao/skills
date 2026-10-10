@@ -1,13 +1,16 @@
 # Skills
 
-Claude Code skills for building software with coding agents, as a plugin
-marketplace. A project enables the plugins it needs in its own settings.
+Claude Code skills for building software with coding agents, as one plugin. A
+project enables it in its own settings, and every skill is named
+`skills:<name>`, such as `skills:working-issues`, wherever it sits in this
+repository.
 
-| Plugin | Skills | For |
-|---|---|---|
-| `core` | `writing-issues`, `writing-pull-requests`, `writing-specs`, `writing-notes`, `working-issues` | Every project |
-| `greenfield` | `planning-milestones`, `executing-milestones` | A project built from nothing, milestone by milestone, from `docs/specs/milestones.md` |
-| `brownfield` | `triaging-issues`, `cutting-releases` | A project that has shipped, planned release by release in GitHub milestones |
+| Skill | For |
+|---|---|
+| `writing-issues`, `writing-pull-requests`, `writing-specs`, `writing-notes` | Every project |
+| `working-issues` | Every project: issues worked through subagents, worktrees and verification |
+| `planning-milestones`, `executing-milestones` | A project built from nothing, milestone by milestone, from `docs/specs/milestones.md` |
+| `triaging-issues`, `cutting-releases` | A project that has shipped, planned release by release in GitHub milestones |
 
 ## Use it in a project
 
@@ -21,14 +24,12 @@ Check this into the project's `.claude/settings.json`:
     }
   },
   "enabledPlugins": {
-    "core@jacygao": true,
-    "brownfield@jacygao": true
+    "skills@jacygao": true
   }
 }
 ```
 
-Swap `brownfield` for `greenfield` while the project is still being built from
-nothing. Skills are invoked by plugin, such as `core:working-issues`.
+The project's `AGENTS.md` names the skills it uses and when to load each one.
 
 ## What a project's AGENTS.md provides
 

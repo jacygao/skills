@@ -1,6 +1,6 @@
 ---
 name: planning-milestones
-description: How a named milestone in docs/specs/milestones.md becomes an epic issue and one sub-issue per subtask. Load BEFORE planning a milestone or filing its issues.
+description: For a project built from nothing, planned in docs/specs/milestones.md — not one that tracks releases in GitHub milestones. How a named milestone there becomes an epic issue and one sub-issue per subtask. Load BEFORE planning a milestone or filing its issues.
 user-invocable: true
 ---
 

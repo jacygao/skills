@@ -1,6 +1,6 @@
 ---
 name: cutting-releases
-description: How a release's GitHub milestone becomes a version bump, a tag and a GitHub Release. Load BEFORE cutting a release.
+description: For a project that has shipped and tracks releases in GitHub milestones. How a release's GitHub milestone becomes a version bump, a tag and a GitHub Release. Load BEFORE cutting a release.
 user-invocable: true
 ---
 

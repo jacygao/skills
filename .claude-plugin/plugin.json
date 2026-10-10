@@ -1,0 +1,8 @@
+{
+  "name": "skills",
+  "version": "0.0.1",
+  "description": "Skills for building software with coding agents: writing issues, pull requests, specs and notes; working issues through subagents; planning milestones for a new project; triaging issues and cutting releases for a shipped one.",
+  "author": {
+    "name": "Jacy Gao"
+  }
+}

@@ -1,6 +1,6 @@
 ---
 name: executing-milestones
-description: How a planned milestone's issue tree from docs/specs/milestones.md yields the issues ready to work, which working-issues then dispatches. Load BEFORE executing a milestone.
+description: For a project built from nothing, planned in docs/specs/milestones.md — not one that tracks releases in GitHub milestones. How a planned milestone's issue tree yields the issues ready to work, which working-issues then dispatches. Load BEFORE executing a milestone.
 user-invocable: true
 ---
 
