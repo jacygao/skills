@@ -36,8 +36,6 @@ Conventions live in `docs/rules/`, one topic per file.
 - **Give it a header:** a quoted one-line `description`, and `paths` if it
   covers one area of code. Quote every value, because an unquoted colon breaks
   the YAML, and Claude Code then silently loads the rule everywhere.
-- **State the rule, then its reason in one line.** Long arguments belong in the
-  issue or pull request that settled the rule; link it.
 - **Only write what's true of the repository now.** If a rule lands with an open
   issue, say which one.
 
