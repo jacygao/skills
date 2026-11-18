@@ -18,7 +18,7 @@ several subagents at once, and a shared index would conflict every time.
 
 ```markdown
 ---
-settles: "§ 4 — whether pi reports cost during a run, and how a round's cost is summed; § 7 — the cost a killed round records"
+settles: "§ 4: whether pi reports cost during a run, and how a round's cost is summed; § 7: the cost a killed round records"
 issue: [12, 21]
 recorded: 2026-09-12
 versions: { pi: "0.84.2, 0.85.1", node: 24.15.0 }
@@ -65,23 +65,25 @@ that would invalidate the finding, so `grep -L` finds what to re-run.
 
 ## Principles
 
-- **Record the decision, not the case for it** — method, evidence, tables and
-  what was tried go in the pull request
-- **Never summarise an exact field name, endpoint or id** — the string is the
-  deliverable
+- **Record the decision, not the case for it.** Method, evidence, tables, what
+  was tried, how runs were driven and what they cost go in the pull request.
+- **Fit one screen.** A note past about 80 lines is carrying the case for its
+  decisions. Move that to the pull request before finishing.
+- **Never summarise an exact field name, endpoint or id.** The string is the
+  deliverable.
 - **Mark a reference value you did not see in output** as `(unverified)`, so a
-  plausible guess is never read as an observation
-- **Never write "see #12 for the details"** — the note stands on its own, and a
-  link out of the repository is the first thing to rot
-- **State a limit plainly** — it is a fact, not an apology
-- **Record a contradiction with `docs/specs/` and name the section** — do not
-  edit the spec; reconciling it is a separate decision
+  plausible guess is never read as an observation.
+- **Never write "see #12 for the details".** The note stands on its own, and a
+  link out of the repository is the first thing to rot.
+- **State a limit plainly.** It is a fact, not an apology.
+- **Record a contradiction with `docs/specs/` and name the section.** Do not
+  edit the spec; reconciling it is a separate decision.
 
 ## Resources
 
 - The project's prose rules, such as `.claude/rules/prose.md`, where it has
-  them — they govern the sentences, and `docs/notes/` is in their scope
-- The project's main specification, which its `AGENTS.md` names — cited by H2
+  them. They govern the sentences, and `docs/notes/` is in their scope
+- The project's main specification, which its `AGENTS.md` names, cited by H2
   number, never by title
-- The `writing-pull-requests` skill — where the method and the evidence go
+- The `writing-pull-requests` skill, where the method and the evidence go
   instead
