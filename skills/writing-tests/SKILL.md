@@ -28,7 +28,16 @@ that fails when that behaviour breaks.
   run for real.** That is the network, the clock, or a platform API the test
   runtime lacks, such as the browser's storage under Node. Never fake a module
   of your own: fake the browser's `SpeechRecognition`, not the module of yours
-  that wraps it, and fake `fetch`, not your client for the API.
+  that wraps it, and fake `fetch`, not your client for the API. A wrapper of
+  yours whose only job is to call another company's service, such as a
+  sign-in provider, counts as that service: fake it, so the endpoint above it
+  is tested.
+- **A network fake checks what it was sent.** It answers only the request the
+  real service would accept, by its path, method and the body fields the
+  service reads, so a test fails when the code sends the wrong one.
+- **To control when real work finishes, hold the real call rather than
+  replacing it.** A race test can make the real database read wait for the
+  test to release it, and the read still runs.
 - **Assert the result someone can observe.** Read the note back from the
   database rather than asserting the arguments of the call that wrote it.
 - **Test this project's code, not a library's behaviour through it.** A case
