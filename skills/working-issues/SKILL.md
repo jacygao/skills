@@ -166,7 +166,8 @@ Every brief carries:
 - **Test the unit as a black box.** Choose each case from its inputs and
   outputs, or a user's action and what they see, never from its branches.
   Drive it through its public surface and fake only what crosses the network.
-  Coverage is not a goal: no test to reach a line, none that checks a
+  Test this project's code, not a library's behaviour through it, such as a
+  markdown parser's bold. Coverage is not a goal: no test to reach a line, none that checks a
   constant, a literal, a config value or a data table, and no assertion on an
   internal call, a mock's arguments or internal state where an observable
   result exists
@@ -221,8 +222,8 @@ anything. Send it back rather than proving it yourself. A test with no red is
 deleted.
 
 Then **read each new test as a claim about behaviour**. Send back one that pins
-a constant, a literal or a config value, or asserts an internal call where an
-observable result exists.
+a constant, a literal or a config value, asserts an internal call where an
+observable result exists, or tests a library rather than this project's code.
 
 Remove the verification worktree when done.
 
