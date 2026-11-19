@@ -25,10 +25,10 @@ that fails when that behaviour breaks.
 - **Choose each case from the unit's inputs and outputs**, or from a user's
   action and what they see, never from its branches.
 - **Drive it through its public surface, and fake only what the test cannot
-  run for real.** That is the network, or a platform API the test runtime
-  lacks, such as the browser's storage under Node. Never fake a module of your
-  own: fake the browser's `SpeechRecognition`, not the module of yours that
-  wraps it.
+  run for real.** That is the network, the clock, or a platform API the test
+  runtime lacks, such as the browser's storage under Node. Never fake a module
+  of your own: fake the browser's `SpeechRecognition`, not the module of yours
+  that wraps it, and fake `fetch`, not your client for the API.
 - **Assert the result someone can observe.** Read the note back from the
   database rather than asserting the arguments of the call that wrote it.
 - **Test this project's code, not a library's behaviour through it.** A case
