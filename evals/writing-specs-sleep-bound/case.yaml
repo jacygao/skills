@@ -46,6 +46,17 @@ graders:
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-specs"'
 
+  # Requirements the fixture already holds, near the edit, must survive it.
+  - name: keeps-the-requirements-around-it
+    type: regex
+    pattern: '^(?=[\s\S]*900\s+seconds)(?=[\s\S]*10,000,000)(?=[\s\S]*At\s+most\s+30\s+seconds)(?=[\s\S]*A\s+reserve\s+of\s+60\s+seconds)(?=[\s\S]*one\s+deadline\s+of\s+540\s+seconds)(?=[\s\S]*more\s+than\s+30\s+seconds)(?=[\s\S]*30,000,000\s+tokens)'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: states-the-cap-on-sleep
+    type: regex
+    pattern: '(?:asleep|sleep|slept)[\s\S]{0,300}(?:twice|up\s+to\s+the|at\s+most\s+the|length\s+of\s+the)'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
   - name: states-sleep
     type: regex
     pattern: 'sle(?:ep|pt)'

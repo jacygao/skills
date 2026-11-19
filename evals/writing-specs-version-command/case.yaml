@@ -53,6 +53,13 @@ graders:
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-specs"'
 
+  # Requirements the fixture already holds, near the edit, must survive it.
+  - name: keeps-the-requirements-around-it
+    type: regex
+    pattern: '^(?=[\s\S]*\|\s*`squiz\s+status`\s*\|)(?=[\s\S]*\|\s*`squiz\s+init`\s*\|)(?=[\s\S]*\|\s*`squiz\s+doctor`\s*\|)(?=[\s\S]*\|\s*`squiz\s+reply\s+<id>\s+<text>`\s*\|)(?=[\s\S]*^###\s+`squiz\s+init`)(?=[\s\S]*^####\s+The\s+link)(?=[\s\S]*^####\s+The\s+permission\s+rules)(?=[\s\S]*^###\s+Structure)'
+    flags: m
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
   - name: has-the-command-section
     type: regex
     pattern: '^### `squiz version`'

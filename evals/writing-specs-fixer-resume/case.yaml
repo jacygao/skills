@@ -59,6 +59,27 @@ graders:
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-specs"'
 
+  # Requirements the fixture already holds, near the edit, must survive it.
+  - name: keeps-the-requirements-around-it
+    type: regex
+    pattern: '^(?=[\s\S]*closed\.json)(?=[\s\S]*stopped\.json)(?=[\s\S]*fixerCommands)(?=[\s\S]*SQUIZ_FIXER=1)(?=[\s\S]*CLAUDE_CODE_MESSAGING_SOCKET)(?=[\s\S]*R\s*−\s*1)(?=[\s\S]*`not\s+started`)(?=[\s\S]*2700\s+seconds)(?=[\s\S]*fixer\.log)'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: resume-is-handed-update-md
+    type: regex
+    pattern: 'update\.md'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: failed-resume-gets-a-fresh-fixer
+    type: regex
+    pattern: '(?:resum\w*)[\s\S]{0,600}(?:fail\w*|non-zero|exits?\s+1)[\s\S]{0,400}(?:fresh|new\s+(?:fixer|session)|replaced)|(?:fail\w*|non-zero)[\s\S]{0,300}(?:resum\w*)[\s\S]{0,300}(?:fresh|new\s+(?:fixer|session)|replaced)'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: another-session-or-cli-gets-a-fresh-fixer
+    type: regex
+    pattern: '(?:another|other)\s+(?:session|CLI)|(?:session|CLI)\s+other\s+than'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
   - name: states-resume
     type: regex
     pattern: '[Rr]esume'

@@ -54,6 +54,26 @@ graders:
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-specs"'
 
+  # Requirements the fixture already holds, near the edit, must survive it.
+  - name: keeps-the-requirements-around-it
+    type: regex
+    pattern: '^(?=[\s\S]*argv\(opts\))(?=[\s\S]*confine\(opts\))(?=[\s\S]*read\(reports\))(?=[\s\S]*is\s+not\s+a\s+model\s+pi\s+offers)(?=[\s\S]*"gpt-5-nano",\s+which\s+the\s+reviewer)(?=[\s\S]*totalNanoAiu)(?=[\s\S]*\|\s*No\s+finish,\s+and\s+no\s+usage\s+line)(?=[\s\S]*records\s+a\s+cost\s+only\s+where\s+Copilot\s+ended\s+by\s+itself)'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  # The fixture says "no model" three times. Pasting the example alone adds
+  # none; stating that a signed-out reason names no model adds one.
+  - name: signed-out-names-no-model
+    type: regex
+    pattern: '(?:no\s+model[\s\S]*?){4}'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  # The sentence that limited this to a detached run is rewritten.
+  - name: pane-runs-carry-stderr-too
+    type: regex
+    pattern: 'Detached,\s+the\s+round\s+adds\s+the\s+run.s\s+stderr'
+    match: not_contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
   - name: states-not-signed-in
     type: regex
     pattern: 'not signed in'

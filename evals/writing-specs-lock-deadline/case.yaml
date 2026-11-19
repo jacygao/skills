@@ -42,6 +42,13 @@ graders:
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-specs"'
 
   # The fixture's spec is 280 lines.
+
+  # Requirements the fixture already holds, near the edit, must survive it.
+  - name: keeps-the-requirements-around-it
+    type: regex
+    pattern: '^(?=[\s\S]*never\s+across\s+a\s+review)(?=[\s\S]*pid\s+and\s+start\s+time)(?=[\s\S]*never\s+breaks\s+the\s+lock)(?=[\s\S]*Readers\s+take\s+no\s+lock)(?=[\s\S]*cannot\s+be\s+written)(?=[\s\S]*\.squiz/\.gitignore)'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
   - name: grows-at-most-3-lines
     type: regex
     pattern: '(?:[^\n]*\n){284}'

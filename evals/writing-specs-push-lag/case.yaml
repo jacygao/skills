@@ -52,6 +52,22 @@ graders:
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-specs"'
 
+  # Requirements the fixture already holds, near the edit, must survive it.
+  - name: keeps-the-requirements-around-it
+    type: regex
+    pattern: '^(?=[\s\S]*Exit\s+0\s+is\s+given\s+only\s+for\s+a\s+state\s+a\s+round\s+reviewed)(?=[\s\S]*\|\s*4\s*\|\s*Still\s+reviewing)(?=[\s\S]*exits\s+1\s+prints\s+nothing\s+on\s+stdout)(?=[\s\S]*\.squiz/<number>/review\.txt)(?=[\s\S]*PR\s+#41\s+is\s+closed)(?=[\s\S]*GitHub\s+is\s+unreachable)(?=[\s\S]*The\s+token\s+bound\s+is\s+reached)'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: the-wait-ends-in-exit-1
+    type: regex
+    pattern: '60\s+seconds[\s\S]{0,400}exits?\s+1|exits?\s+1[\s\S]{0,400}60\s+seconds'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: the-wait-follows-a-push
+    type: regex
+    pattern: 'push(?:ed|es)?\b[\s\S]{0,300}60\s+seconds|60\s+seconds[\s\S]{0,300}push(?:ed)?\b'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
   - name: states-the-60-second-wait
     type: regex
     pattern: '60 seconds'
