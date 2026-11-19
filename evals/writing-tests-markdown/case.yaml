@@ -39,17 +39,17 @@ graders:
 
   - name: empty-input-is-tested
     type: regex
-    pattern: 'formatMarkdown\((?:null|undefined|''''|"")\)'
+    pattern: 'assert\.\w+\(\s*formatMarkdown\([^)]*\)\s*,\s*(?:''''|"")\s*\)'
     target: { source: file, path: test/markdown.test.js }
 
   - name: new-tab-is-tested
     type: regex
-    pattern: '_blank|noopener'
+    pattern: 'assert\.\w+\([^;]*(?:_blank|noopener)'
     target: { source: file, path: test/markdown.test.js }
 
   - name: wiki-link-is-tested
     type: regex
-    pattern: '\[\[[^\]|]+\|[^\]]+\]\][\s\S]{0,300}\\?/notes\\?/'
+    pattern: '\[\[[^\]|]+\|[^\]]+\]\][\s\S]{0,300}assert\.\w+\([^;]*\\?/notes\\?/|assert\.\w+\([^;]*\[\[[^\]|]+\|[^\]]+\]\][^;]*\\?/notes\\?/'
     target: { source: file, path: test/markdown.test.js }
 
   - name: no-library-cases

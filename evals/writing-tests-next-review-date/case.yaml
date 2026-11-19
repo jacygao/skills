@@ -46,7 +46,7 @@ graders:
 
   - name: tested-through-the-module
     type: regex
-    pattern: '^(?=[\s\S]*from\s+[''"]\.\./src/discover\.js[''"])(?=[\s\S]*discoverSummary\()(?=[\s\S]*pending)'
+    pattern: '^(?=[\s\S]*from\s+[''"]\.\./src/discover\.js[''"])(?=[\s\S]*discoverSummary\()(?=[\s\S]*pending)(?=[\s\S]*assert\.\w+\([^;]*nextReviewDate)'
     target: { source: file, path: test/discover.test.js }
 
   - name: no-copy-of-the-code
