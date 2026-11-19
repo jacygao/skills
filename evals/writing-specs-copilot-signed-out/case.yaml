@@ -78,7 +78,7 @@ graders:
   # run's reason carries what the reviewer said too.
   - name: pane-runs-are-stated
     type: regex
-    pattern: '(?:stderr|said|wrote)[^.]{0,200}pane|pane[^.]{0,200}(?:stderr|said|wrote)'
+    pattern: '(?:stderr|said|wrote)[^.|]{0,200}(?:\.[^.|]{0,200})?\bpane|\bpane[^.|]{0,200}(?:\.[^.|]{0,200})?(?:stderr|said|wrote)'
     target: { source: file, path: docs/specs/review-harness-spec.md }
 
   - name: states-not-signed-in

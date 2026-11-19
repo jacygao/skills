@@ -74,6 +74,11 @@ name the section in the reply as one to trim. Where the change makes such
 detail wrong, such as a command line the code no longer builds, delete it
 rather than update it.
 
+**A brief's flags and command lines are the code's.** Where the brief gives the
+flags or command lines the program passes to another program, the spec says
+what the call does, such as "resumes the session by its id", and names none of
+them.
+
 For every edit:
 
 1. **Find where the behaviour is already stated, and change that sentence.**

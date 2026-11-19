@@ -96,7 +96,7 @@ graders:
   # what only it checked is two regexes.
   - name: not-from-cwd-or-path
     type: regex
-    pattern: 'working\s+directory[\s\S]{0,120}PATH'
+    pattern: '(?:working|current)\s+directory[\s\S]{0,120}PATH|directory\s+(?:it|squiz)\s+is\s+run\s+from[\s\S]{0,120}PATH'
     target: { source: file, path: docs/specs/review-harness-spec.md }
 
   - name: exits-1-when-unreadable
