@@ -159,9 +159,17 @@ Every brief carries:
 - **The specific silent failures.** Mostly these are places where a broken
   thing and a correct thing produce the same output. `AGENTS.md` lists the
   project's; name what tells the two apart
-- **Red, then green.** Write each test first and watch it fail for the reason it
-  names, then write the code that makes it pass. A test that was never seen
-  failing has not shown it can, and is deleted rather than kept
+- **Red, green, then refactor.** Write each test first and watch it fail for
+  the reason it names, write the code that makes it pass, then refactor with
+  the test kept green. A test that was never seen failing has not shown it can,
+  and is deleted rather than kept
+- **Test the unit as a black box.** Choose each case from its inputs and
+  outputs, or a user's action and what they see, never from its branches.
+  Drive it through its public surface and fake only what crosses the network.
+  Coverage is not a goal: no test to reach a line, none that checks a
+  constant, a literal, a config value or a data table, and no assertion on an
+  internal call, a mock's arguments or internal state where an observable
+  result exists
 - What to prove rather than assume, and to file a `needs-human` issue instead of
   shipping something it could not verify
 - **The pull request body ends at its last real section.** No generated-with
@@ -211,6 +219,10 @@ report that shows no red for a test, or shows one that failed for another reason
 (an import, a typo, a missing fixture), has not shown the test can catch
 anything. Send it back rather than proving it yourself. A test with no red is
 deleted.
+
+Then **read each new test as a claim about behaviour**. Send back one that pins
+a constant, a literal or a config value, or asserts an internal call where an
+observable result exists.
 
 Remove the verification worktree when done.
 
