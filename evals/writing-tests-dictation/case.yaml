@@ -1,7 +1,7 @@
 schema_version: "1.1"
 name: writing-tests-dictation
 description: >
-  A test fakes only what crosses the network, the browser's speech
+  A test fakes only what it cannot run for real, the browser's speech
   recognition, not the project's own module that wraps it, even where the
   file's existing test does. From mono's useSpeechToText.test.ts, which mocks
   ./index, where ChatInput.dictation.test.jsx fakes window.SpeechRecognition.
