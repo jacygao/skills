@@ -53,22 +53,11 @@ graders:
     pattern: '^(?=[\s\S]*archived\s*:\s*true)(?=[\s\S]*\.archived)'
     target: { source: file, path: src/notes.js }
 
-  # A test block runs from one test( or it( to the next.
-  - name: asserts-the-list-leaves-it-out
-    type: regex
-    pattern: '(?:test|it)\((?:(?!\n\s*(?:test|it)\()[\s\S])*?archiveNote\((?:(?!\n\s*(?:test|it)\()[\s\S])*?listNotes\((?:(?!\n\s*(?:test|it)\()[\s\S])*?assert\.|(?:test|it)\((?:(?!\n\s*(?:test|it)\()[\s\S])*?archiveNote\((?:(?!\n\s*(?:test|it)\()[\s\S])*?assert\.\w+\([^;]*listNotes\('
-    target: { source: file, path: test/notes.test.js }
-
-  - name: asserts-the-note-is-archived
-    type: regex
-    pattern: '(?:test|it)\((?:(?!\n\s*(?:test|it)\()[\s\S])*?archiveNote\((?:(?!\n\s*(?:test|it)\()[\s\S])*?(?:getNote\((?:(?!\n\s*(?:test|it)\()[\s\S])*?assert\.\w+\([^;]*archived|assert\.\w+\([^;]*getNote\([^;]*archived)'
-    target: { source: file, path: test/notes.test.js }
-
-  # The fixture's own tests mock the database, and the skill asks for them to
-  # be replaced, so mocks are judged in the tests that archive, not counted.
+  # A test block runs from its test( or it( to the next one, or to a line
+  # starting "})".
   - name: no-mock-in-an-archive-test
     type: regex
-    pattern: '(?:test|it)\((?:(?!\n\s*(?:test|it)\()[\s\S])*?(?:archiveNote\((?:(?!\n\s*(?:test|it)\()[\s\S])*?mock\.|mock\.(?:(?!\n\s*(?:test|it)\()[\s\S])*?archiveNote\()'
+    pattern: '(?:test|it)\((?:(?!\n\s*(?:test|it)\(|\n\}\))[\s\S])*?(?:archiveNote\((?:(?!\n\s*(?:test|it)\(|\n\}\))[\s\S])*?mock\.|mock\.(?:(?!\n\s*(?:test|it)\(|\n\}\))[\s\S])*?archiveNote\()'
     match: not_contains
     target: { source: file, path: test/notes.test.js }
 
@@ -77,3 +66,20 @@ graders:
     pattern: 'mock\.method'
     match: not_contains
     target: { source: file, path: test/notes.test.js }
+
+  - name: asserts-both-results
+    type: llm
+    focus: { source: file, path: test/notes.test.js }
+    criteria: |
+      This is a node:test file. Judge meaning, not wording: a result held in a
+      variable, or an assertion with a message, counts.
+
+      PASS only if, after a note is archived with archiveNote, the tests:
+      - assert that listNotes no longer returns that note, so the test would fail
+        if listNotes still returned it; and
+      - assert that getNote returns that note with archived true.
+      Both may be in one test or in two.
+
+      FAIL if either result is only computed and never asserted, if the
+      assertion is about something else, such as a mock's arguments, or if no
+      note is archived.

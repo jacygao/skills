@@ -46,7 +46,7 @@ graders:
 
   - name: tested-through-the-module
     type: regex
-    pattern: '^(?=[\s\S]*from\s+[''"]\.\./src/discover\.js[''"])(?=[\s\S]*discoverSummary\()(?=[\s\S]*pending)(?=[\s\S]*assert\.\w+\([^;]*nextReviewDate)'
+    pattern: '^(?=[\s\S]*from\s+[''"]\.\./src/discover\.js[''"])(?=[\s\S]*discoverSummary\()'
     target: { source: file, path: test/discover.test.js }
 
   - name: no-copy-of-the-code
@@ -60,3 +60,19 @@ graders:
     pattern: 'export[^\n]*getNextReviewDate'
     match: not_contains
     target: { source: file, path: src/discover.js }
+
+  - name: asserts-the-pending-case
+    type: llm
+    focus: { source: file, path: test/discover.test.js }
+    criteria: |
+      This is a node:test file. Judge meaning, not wording: a result held in a
+      variable, or an assertion with a message, counts.
+
+      PASS only if a test calls discoverSummary with notes that include one whose
+      nextReviewDate is not a valid date (such as "pending") and at least one with
+      a valid date, and asserts that the summary's nextReviewDate is the valid
+      date, so the test would fail if the invalid date were returned.
+
+      FAIL if that case is only called and not asserted, if the assertion is about
+      some other input, or if it calls a copy of the code rather than
+      discoverSummary imported from ../src/discover.js.

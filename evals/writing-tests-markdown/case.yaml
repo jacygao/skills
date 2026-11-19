@@ -39,17 +39,17 @@ graders:
 
   - name: empty-input-is-tested
     type: regex
-    pattern: 'assert\.\w+\(\s*formatMarkdown\([^)]*\)\s*,\s*(?:''''|"")\s*\)'
+    pattern: 'formatMarkdown\((?:null|undefined|''''|""|\w+)\)'
     target: { source: file, path: test/markdown.test.js }
 
   - name: new-tab-is-tested
     type: regex
-    pattern: 'assert\.\w+\([^;]*(?:_blank|noopener)'
+    pattern: '_blank|noopener'
     target: { source: file, path: test/markdown.test.js }
 
   - name: wiki-link-is-tested
     type: regex
-    pattern: '\[\[[^\]|]+\|[^\]]+\]\][\s\S]{0,300}assert\.\w+\([^;]*\\?/notes\\?/|assert\.\w+\([^;]*\[\[[^\]|]+\|[^\]]+\]\][^;]*\\?/notes\\?/'
+    pattern: '\[\[[^\]|]+\|[^\]]+\]\][\s\S]{0,300}\\?/notes\\?/'
     target: { source: file, path: test/markdown.test.js }
 
   - name: no-library-cases
@@ -57,3 +57,19 @@ graders:
     pattern: '<(?:strong|em|h[1-6])>'
     match: not_contains
     target: { source: file, path: test/markdown.test.js }
+
+  - name: asserts-each-behaviour
+    type: llm
+    focus: { source: file, path: test/markdown.test.js }
+    criteria: |
+      This is a node:test file for formatMarkdown. Judge meaning, not wording: a
+      result held in a variable, or an assertion with a message, counts.
+
+      PASS only if the tests assert each of these results, so each test would fail
+      if its behaviour broke:
+      - empty input (null, undefined or an empty string) gives an empty string;
+      - a web link (http or https) gets target="_blank" and rel="noopener
+        noreferrer";
+      - [[<id>|<label>]] becomes a link to /notes/<id> showing the label.
+
+      FAIL if any of the three is only called and not asserted, or is not tested.
