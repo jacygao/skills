@@ -1,0 +1,82 @@
+schema_version: "1.1"
+name: writing-specs-copilot-signed-out
+description: >
+  A fix that changes a message states the new message, not the CLI version it
+  was seen on or how the adapter recognises it. From squiz #856, which added
+  "Copilot 1.0.109 prints that line", stderr plumbing and a new adapter field.
+expected_outcome: >
+  The reason for a signed-out Copilot reviewer says it is not signed in and
+  names no model, stated in one place with one example; a pane round's reason
+  carries what the reviewer said. No version numbers or code fields.
+tags: [writing-specs, squiz, bug-fix]
+
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Read AGENTS.md first.
+
+    You have fixed issue #849 on this branch, and the code and tests are done:
+
+    - A signed-out Copilot reviewer was reported as "completed no message" with
+      the hint that the default model may be wrong, in the terminal and in the
+      failure comment. It now says the reviewer is not signed in, and names no
+      model.
+    - The Copilot script keeps Copilot's stderr in `stderr.txt` in the session
+      directory, then writes it to its own stderr and exits with Copilot's
+      status. A round in a pane used to read nothing of what Copilot said; it
+      now reads this file.
+    - Adapters can take two new optional fields. `stderrFile` names the file the
+      round reads for a reviewer in a pane. `diagnose` turns what a run with no
+      messages said into a reason, and a diagnosed reason gets no model hint.
+    - The Copilot adapter diagnoses a stderr line of exactly `Error: No
+      authentication information found.` as:
+
+      ```
+      the reviewer is not signed in to Copilot: it said "Error: No authentication information found."
+      ```
+
+      That text was seen on Copilot CLI 1.0.109, which exits 1 before any
+      request when it finds no login.
+    - A pane run that the adapter does not diagnose now carries what it said,
+      `…, and said: …`, ahead of the model hint, as a detached run already did.
+
+    Update docs/specs/review-harness-spec.md for this change. GitHub isn't
+    reachable, so edit the files in place and don't commit.
+
+context:
+  scaffold_script: fixture.sh
+
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-specs"'
+
+  - name: states-not-signed-in
+    type: regex
+    pattern: 'not signed in'
+    match: contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  # The fixture's spec is 315 lines.
+  - name: grows-at-most-10-lines
+    type: regex
+    pattern: '(?:[^\n]*\n){326}'
+    match: not_contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: no-version-or-plumbing
+    type: regex
+    pattern: '1\.0\.109|[Tt]ested on|[Ss]een on|stderrFile|`diagnose`|stderr\.txt'
+    match: not_contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  # An LLM judge passed these edits when run by hand and failed them in the
+  # harness, so the one check only it made is a count here.
+  - name: one-example-of-the-reason
+    type: regex
+    pattern: 'not signed in to Copilot: it said'
+    match: 'count:1'
+    target: { source: file, path: docs/specs/review-harness-spec.md }

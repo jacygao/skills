@@ -1,0 +1,92 @@
+schema_version: "1.1"
+name: writing-specs-push-lag
+description: >
+  A fix that adds observable behaviour states that behaviour, not the
+  dependency quirk behind it. From squiz #855, which explained GitHub's lag
+  after a push and the remote-tracking ref used to detect it in § 7.
+expected_outcome: >
+  § 7 squiz review says a run waits up to 60 seconds for GitHub to report the
+  commit the worktree pushed, then exits 1 naming both heads; § 8 gets one row.
+  GitHub's lag and the detection logic are not explained.
+tags: [writing-specs, squiz, bug-fix]
+
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Read AGENTS.md first.
+
+    You have fixed issue #852 on this branch, and the code and tests are done:
+
+    - Run straight after `git push`, `squiz review` could read the head from
+      before the push, find that head's closed review and exit 0. The pushed
+      commit had not been reviewed. GitHub can go on reporting the pull
+      request's old head for some seconds after a push lands, while the
+      branch's remote-tracking ref, `@{push}`, already names the new commit.
+    - The GitHub venue's `readChange` now names an `unreported` commit when
+      `@{push}` is not in the history of the head GitHub reports and the
+      repository has that head. It compares `@{push}`, not `HEAD`, so commits
+      not yet pushed are not read as unreported. A head pushed from elsewhere
+      and a branch with no push destination are not either.
+    - `trigger` takes `holdUnreported`. Only `squiz review` sets it; the hooks
+      still decide at once on the head GitHub reports.
+    - `squiz review` asks GitHub again once a second for up to 60 seconds, and
+      also stops at the run's deadline. Where GitHub still has not reported the
+      push, it exits 1:
+
+      ```
+      squiz: no review ran: PR #41 still has 3f9c2e0 as its head after 60 seconds, though this worktree pushed 8d21a4f to it
+      squiz: put these lines in your report rather than running squiz review again
+      ```
+
+    Update docs/specs/review-harness-spec.md for this change. GitHub isn't
+    reachable, so edit the files in place and don't commit.
+
+context:
+  scaffold_script: fixture.sh
+
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-specs"'
+
+  - name: states-the-60-second-wait
+    type: regex
+    pattern: '60 seconds'
+    match: contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  # The fixture's spec is 370 lines.
+  - name: grows-at-most-12-lines
+    type: regex
+    pattern: '(?:[^\n]*\n){383}'
+    match: not_contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: no-detection-internals
+    type: regex
+    pattern: 'remote-tracking|once a second|every second|some seconds|readChange|holdUnreported|`unreported`'
+    match: not_contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: behaviour-without-the-quirk
+    type: llm
+    focus: { source: file, path: docs/specs/review-harness-spec.md }
+    criteria: |
+      Judge meaning, not wording: a requirement stated in other words counts.
+
+      This is a product specification after a fix: run straight after a push,
+      `squiz review` waits for GitHub to report the pushed commit, for at most
+      60 seconds or the run's deadline, then exits 1 naming both heads. Judge
+      only the sentences and table rows that mention GitHub reporting a push,
+      the pushed commit or head, or this 60-second wait. The rest of the file
+      was there before the edit.
+
+      PASS only if they state when the wait applies in terms a user would
+      recognise (after this worktree pushed), its bound, and the exit 1.
+
+      FAIL if they explain why GitHub reports an old head, or spell out the
+      comparison used to detect it: which ref is compared with which head's
+      history, or whether the repository has the head.

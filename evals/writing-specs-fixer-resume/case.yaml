@@ -1,0 +1,113 @@
+schema_version: "1.1"
+name: writing-specs-fixer-resume
+description: >
+  A new feature is specified as requirements, not as the implementation brief.
+  From squiz #877, which grew § 3 Headless runs by 103 lines: four full command
+  lines, both prompts verbatim, a /bin/sh wrapper and a host.log line per case.
+expected_outcome: >
+  Headless runs says an episode has one fixer session, resumed every later
+  round and handed only what changed since its last handoff; the reviewer is
+  never resumed; a failed resume reruns fresh. It grows by tens of lines, not
+  a hundred, with no new command lines or wrapper mechanics.
+tags: [writing-specs, squiz, feature]
+
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Read AGENTS.md first.
+
+    You have built issue #876 on this branch, and the code and tests are done.
+    A headless episode now starts one fixer on the first handoff and resumes
+    that session for every later round. The reviewer stays fresh every round.
+
+    What changed:
+
+    - The fixer starts under a UUID squiz chooses (`--session-id`) and is
+      resumed by it (`claude --resume <id>`, `copilot --resume=<id>`). The
+      resume argv carries the same `--plugin-dir`, permission mode, grants
+      (`fixerCommands` included) and Copilot quiet flags as the start, and
+      `SQUIZ_FIXER=1`.
+    - A resume is handed `rounds/<k>/update.md`: new threads whole, new replies
+      and rulings on threads it was shown, threads closed since, and the open
+      threads with nothing new. `handoff.md` is still written every round.
+    - The state file records `fixerSession`: CLI, id, the round that started
+      it, and the comment node ids it has been shown. No prompt, no transcript.
+      Each fixer start records `session: { id, resumed }`.
+    - A resume runs under `/bin/sh`, which writes the CLI's exit status to
+      `rounds/<k>/fixer.exit`. Once nothing is running or queued, a resumed
+      fixer that exited non-zero is dropped and the same round runs in a fresh
+      fixer on the whole handoff, and `host.log` says so.
+    - A state queued by a stop carrying another session's id, or a session made
+      by another CLI, gets a fresh fixer instead of a resume.
+    - Both prompts now carry five fix rules: check the finding holds, fix the
+      invariant at every site in the changed area, add no machinery, re-trace,
+      one focused check.
+    - Each CLI's session route was run directly (Claude Code 2.1.325, Copilot
+      CLI 1.0.110). `--resume` of an unknown id exits 1 on both.
+
+    Update docs/specs/review-harness-spec.md for this change. GitHub isn't
+    reachable, so edit the files in place and don't commit.
+
+context:
+  scaffold_script: fixture.sh
+
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-specs"'
+
+  - name: states-resume
+    type: regex
+    pattern: '[Rr]esume'
+    match: contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  # The fixture's spec is 494 lines. squiz's own edit added 103.
+  - name: grows-at-most-45-lines
+    type: regex
+    pattern: '(?:[^\n]*\n){540}'
+    match: not_contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  # The fixture already has two fixer command lines and two with ellipses.
+  # Fewer is fine: deleting stale ones is what the skill asks for.
+  - name: no-new-command-lines
+    type: regex
+    pattern: '(?:^(?:claude|copilot) -p [\s\S]*?){5}'
+    match: not_contains
+    flags: m
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: no-wrapper-or-evidence
+    type: regex
+    pattern: '/bin/sh|node ids|2\.1\.325|no-mistakes'
+    match: not_contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: requirements-not-the-brief
+    type: llm
+    focus: { source: file, path: docs/specs/review-harness-spec.md }
+    criteria: |
+      Judge meaning, not wording: a requirement stated in other words counts.
+
+      This is a product specification after a feature: in a headless run the
+      first round that starts a fixer starts a new session, and later rounds of
+      the episode resume it, handing it only what changed since its last
+      handoff, while the full handoff is still written. A failed resume is run
+      again as a fresh fixer on the whole handoff. A state queued by another
+      session, or a changed fixer CLI, gets a fresh fixer. Judge only the
+      section "Headless runs" and the state file's description of the fixer
+      session.
+
+      PASS only if all of these hold:
+      - Each requirement above is stated.
+      - Neither prompt is quoted in full. The rules the prompts carry may be
+        named inline in one sentence, but not as a block, bullet list or
+        numbered list.
+      - Nothing describes how a resume's exit status is captured (a shell
+        wrapper, an exit-status file's mechanics).
+      - It does not give the command-line flags a resume or a start uses to
+        pass the session id. Command lines the section already had may stay.

@@ -1,0 +1,85 @@
+schema_version: "1.1"
+name: writing-specs-sleep-bound
+description: >
+  A fix that changes observable behaviour rewrites the sentence that states it,
+  without the mechanism. From squiz #747, which added how sleep is detected (a
+  clock read every 250 ms, a 5-second gap) to § 7 The review budget.
+expected_outcome: >
+  The review budget says time the machine sleeps does not count against the
+  review's time bound, up to the bound itself, in a sentence or two, and
+  nothing about how sleep is detected.
+tags: [writing-specs, squiz, bug-fix]
+
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Read AGENTS.md first.
+
+    You have fixed issue #665 on this branch, and the code and tests are done:
+
+    - A round the machine slept through was killed at its bound on waking, with
+      no findings, and took a round of the cap. Time asleep now costs the
+      review nothing, up to the bound itself.
+    - `awakeDeadlineIn()` in `src/reviewers/deadline.ts`: while its watch runs,
+      it looks at the clock every 250 ms, and a gap of more than 5 seconds
+      between two looks is a sleep. It moves the deadline on by the gap. What it
+      adds back is capped at the deadline's own length, so a review never runs
+      past twice its bound.
+    - Only the review's own bound uses it. The time before the review, the
+      posting reserve and `squiz review`'s 540-second wait count sleep as any
+      other time.
+    - Node on macOS has no clock that stops in sleep: `process.hrtime` and the
+      timers both read `mach_continuous_time`. That is why the gap between looks
+      is what detects a sleep.
+
+    Update docs/specs/review-harness-spec.md for this change. GitHub isn't
+    reachable, so edit the files in place and don't commit.
+
+context:
+  scaffold_script: fixture.sh
+
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-specs"'
+
+  - name: states-sleep
+    type: regex
+    pattern: 'sle(?:ep|pt)'
+    match: contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  # The fixture's spec is 178 lines.
+  - name: grows-at-most-6-lines
+    type: regex
+    pattern: '(?:[^\n]*\n){185}'
+    match: not_contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: no-detection-mechanism
+    type: regex
+    pattern: '250|millisecond|\bms\b|5 seconds|five seconds|hrtime|mach_|awakeDeadlineIn|monotonic'
+    match: not_contains
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: the-behaviour-not-the-mechanism
+    type: llm
+    focus: { source: file, path: docs/specs/review-harness-spec.md }
+    criteria: |
+      Judge meaning, not wording: a requirement stated in other words counts.
+
+      This is a product specification after a fix: time the machine sleeps
+      during a review no longer counts against the review's time bound, and at
+      most the bound itself is added back. Judge only the sentences that
+      mention sleep or the machine being asleep or awake. The rest of the file
+      was there before the edit.
+
+      PASS only if those sentences say that sleep during the review does not
+      count against the time bound, and that what is left out is capped (at
+      the bound, or as "at most twice its bound").
+
+      FAIL if they say how a sleep is detected, or narrate the bug (a round
+      killed on waking).
