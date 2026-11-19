@@ -103,3 +103,20 @@ graders:
     type: regex
     pattern: 'plugin\.json[\s\S]{0,500}(?:exits?\s+(?:with\s+)?1|exit\s+is\s+1|exit\s+status\s+(?:is\s+)?1)'
     target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  # Scoped to the new section, so an abbreviated one cannot pass.
+  - name: version-has-a-table-row
+    type: regex
+    pattern: '^\|\s*`squiz\s+version`'
+    flags: m
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: version-exits-0
+    type: regex
+    pattern: '###\s+`squiz\s+version`(?:(?!\n###?\s)[\s\S])*?(?:exits?\s+0|exit\s+(?:status\s+)?(?:is\s+)?0)'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: version-error-on-stderr-not-stdout
+    type: regex
+    pattern: '###\s+`squiz\s+version`(?:(?!\n###?\s)[\s\S])*?(?:stdout[\s\S]{0,300}stderr|stderr[\s\S]{0,300}stdout)'
+    target: { source: file, path: docs/specs/review-harness-spec.md }

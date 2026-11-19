@@ -74,6 +74,13 @@ graders:
     match: not_contains
     target: { source: file, path: docs/specs/review-harness-spec.md }
 
+  # Deleting the detached-only sentence is not enough: a sentence says a pane
+  # run's reason carries what the reviewer said too.
+  - name: pane-runs-are-stated
+    type: regex
+    pattern: '(?:stderr|said|wrote)[^.]{0,200}pane|pane[^.]{0,200}(?:stderr|said|wrote)'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
   - name: states-not-signed-in
     type: regex
     pattern: 'not signed in'
