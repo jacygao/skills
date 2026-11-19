@@ -1,0 +1,77 @@
+schema_version: "1.1"
+name: writing-tests-markdown
+description: >
+  Tests for code that wraps a library test what the project adds, not what the
+  library does. From mono's markdown.test.ts, which tests bold and italic
+  through `marked`.
+expected_outcome: >
+  test/markdown.test.js covers what formatMarkdown adds: empty input gives an
+  empty string, a web link opens in a new tab, and a wiki link goes to
+  /notes/<id> in the same tab. No case checks tinymark's own markup, such as
+  bold, italic or headings.
+tags: [writing-tests, mono, library]
+
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+  prompt: |
+    Read AGENTS.md first.
+
+    src/markdown.js has no tests. Add them.
+
+    Edit the files in place and don't commit.
+
+context:
+  scaffold_script: fixture.sh
+
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-tests"'
+
+  - name: tests-still-run
+    type: tool_used
+    tool: Bash
+    input_match: 'node\s+--test|npm\s+(?:run\s+)?test'
+    arm: both
+
+  - name: empty-input-is-tested
+    type: regex
+    pattern: 'formatMarkdown\((?:null|undefined|''''|""|\w+)\)'
+    target: { source: file, path: test/markdown.test.js }
+
+  - name: new-tab-is-tested
+    type: regex
+    pattern: '_blank|noopener'
+    target: { source: file, path: test/markdown.test.js }
+
+  - name: wiki-link-is-tested
+    type: regex
+    pattern: '\[\[[^\]|]+\|[^\]]+\]\][\s\S]{0,300}\\?/notes\\?/'
+    target: { source: file, path: test/markdown.test.js }
+
+  - name: no-library-cases
+    type: regex
+    pattern: '<(?:strong|em|h[1-6])>'
+    match: not_contains
+    target: { source: file, path: test/markdown.test.js }
+
+  - name: asserts-each-behaviour
+    type: llm
+    focus: { source: file, path: test/markdown.test.js }
+    criteria: |
+      This is a node:test file for formatMarkdown. Judge meaning, not wording: a
+      result held in a variable, or an assertion with a message, counts.
+
+      PASS only if the tests assert each of these results, so each test would fail
+      if its behaviour broke:
+      - empty input (null, undefined or an empty string) gives an empty string;
+      - a web link (http or https) gets target="_blank" and rel="noopener
+        noreferrer";
+      - [[<id>|<label>]] becomes a link to /notes/<id> showing the label, in
+        the same tab: an assertion on the whole link with no target, or one
+        that the link has no target="_blank".
+
+      FAIL if any of the three is only called and not asserted, or is not tested.

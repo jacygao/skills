@@ -7,7 +7,7 @@ repository.
 
 | Skill | For |
 |---|---|
-| `writing-issues`, `writing-pull-requests`, `writing-specs`, `writing-notes`, `writing-rules` | Every project |
+| `writing-issues`, `writing-pull-requests`, `writing-specs`, `writing-notes`, `writing-rules`, `writing-tests` | Every project |
 | `working-issues` | Every project: issues worked through subagents, worktrees and verification |
 | `planning-milestones`, `executing-milestones` | A project built from nothing, milestone by milestone, from `docs/specs/milestones.md` |
 | `triaging-issues`, `cutting-releases` | A project that has shipped, planned release by release in GitHub milestones |

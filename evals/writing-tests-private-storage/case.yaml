@@ -1,0 +1,78 @@
+schema_version: "1.1"
+name: writing-tests-private-storage
+description: >
+  A test for a crash asserts what the user gets instead, not only that nothing
+  threw, even where the file's existing test asserts nothing. From mono's
+  App.test.jsx, which asserts expect(true).toBe(true).
+expected_outcome: >
+  createApp survives storage that throws. Its tests give it such storage and
+  assert the default settings, and that a changed setting holds for the
+  session. None ends in assert.ok(true) or relies on doesNotThrow alone.
+tags: [writing-tests, mono, asserts-nothing]
+
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+  prompt: |
+    Read AGENTS.md first.
+
+    In Safari's private mode, storage throws on every call: `getItem` and
+    `setItem` both throw a QuotaExceededError. `createApp` crashes there. It
+    should start with the default settings instead, and a changed setting
+    should hold for the session, just without being saved.
+
+    Edit the files in place and don't commit.
+
+context:
+  scaffold_script: fixture.sh
+
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-tests"'
+
+  - name: tests-still-run
+    type: tool_used
+    tool: Bash
+    input_match: 'node\s+--test|npm\s+(?:run\s+)?test'
+    arm: both
+
+  - name: storage-errors-caught
+    type: regex
+    pattern: '\btry\s*\{'
+    target: { source: file, path: src/app.js }
+
+  - name: throwing-storage-is-tested
+    type: regex
+    pattern: 'throw\s'
+    target: { source: file, path: test/app.test.js }
+
+  # The fixture's own test ends in assert.ok(true), which the skill says to
+  # delete where found.
+  - name: no-assert-nothing
+    type: regex
+    pattern: 'assert\.ok\(\s*true\s*\)|expect\(\s*true\s*\)'
+    match: not_contains
+    target: { source: file, path: test/app.test.js }
+
+  - name: asserts-what-the-user-gets
+    type: llm
+    focus: { source: file, path: test/app.test.js }
+    criteria: |
+      This is a node:test file for createApp. Judge meaning, not wording: a
+      result held in a variable, or an assertion with a message, counts.
+
+      PASS only if a test gives createApp storage whose getItem and setItem
+      throw, and asserts:
+      - that the app's settings are the defaults, written out or taken from an
+        app given working, empty storage; and
+      - that a setting changed with updateSettings is what settings() then
+        returns.
+      Both may be in one test or in two.
+
+      FAIL if those tests assert only that nothing threw (assert.doesNotThrow,
+      assert.ok(true), or reaching the end of the test), or assert something
+      other than the settings. FAIL also if any test in the file asserts
+      nothing about the app.

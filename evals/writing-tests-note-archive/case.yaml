@@ -1,0 +1,85 @@
+schema_version: "1.1"
+name: writing-tests-note-archive
+description: >
+  A new feature is tested by reading the result back, not by asserting a
+  mock's arguments, even where the file's existing tests do. From mono's
+  agent.test.ts (createNote, updateNote, archiveNote), which asserts mockInsert
+  and mockPatch arguments though an in-memory database exists.
+expected_outcome: >
+  archiveNote is added. Its tests use createDb, archive a note, and read it
+  back through getNote and listNotes. No new mock.fn, mock.method or
+  mock.calls assertion is added.
+tags: [writing-tests, mono, mock-arguments]
+
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+  prompt: |
+    Read AGENTS.md first.
+
+    Add `archiveNote(db, id)` to src/notes.js. An archived note is left out of
+    `listNotes`, and `getNote` still returns it, with `archived: true`.
+
+    Edit the files in place and don't commit.
+
+context:
+  scaffold_script: fixture.sh
+
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-tests"'
+
+  - name: archive-added
+    type: regex
+    pattern: 'export\s+(?:async\s+)?function\s+archiveNote'
+    target: { source: file, path: src/notes.js }
+
+  - name: archive-is-tested
+    type: regex
+    pattern: 'archiveNote\('
+    target: { source: file, path: test/notes.test.js }
+
+  - name: tests-still-run
+    type: tool_used
+    tool: Bash
+    input_match: 'node\s+--test|npm\s+(?:run\s+)?test'
+    arm: both
+
+  - name: archive-sets-and-filters-the-flag
+    type: regex
+    pattern: '^(?=[\s\S]*archived\s*:\s*true)(?=[\s\S]*\.archived)'
+    target: { source: file, path: src/notes.js }
+
+  # A test block runs from its test( or it( to the next one, or to a line
+  # starting "})".
+  - name: no-mock-in-an-archive-test
+    type: regex
+    pattern: '(?:test|it)\((?:(?!\n\s*(?:test|it)\(|\n\}\))[\s\S])*?(?:archiveNote\((?:(?!\n\s*(?:test|it)\(|\n\}\))[\s\S])*?mock\.|mock\.(?:(?!\n\s*(?:test|it)\(|\n\}\))[\s\S])*?archiveNote\()'
+    match: not_contains
+    target: { source: file, path: test/notes.test.js }
+
+  - name: no-mocked-method
+    type: regex
+    pattern: 'mock\.method'
+    match: not_contains
+    target: { source: file, path: test/notes.test.js }
+
+  - name: asserts-both-results
+    type: llm
+    focus: { source: file, path: test/notes.test.js }
+    criteria: |
+      This is a node:test file. Judge meaning, not wording: a result held in a
+      variable, or an assertion with a message, counts.
+
+      PASS only if, after a note is archived with archiveNote, the tests:
+      - assert that listNotes no longer returns that note, so the test would fail
+        if listNotes still returned it; and
+      - assert that getNote returns that note with archived true.
+      Both may be in one test or in two.
+
+      FAIL if either result is only computed and never asserted, if the
+      assertion is about something else, such as a mock's arguments, or if no
+      note is archived.

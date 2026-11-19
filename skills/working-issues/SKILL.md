@@ -159,9 +159,8 @@ Every brief carries:
 - **The specific silent failures.** Mostly these are places where a broken
   thing and a correct thing produce the same output. `AGENTS.md` lists the
   project's; name what tells the two apart
-- **Red, then green.** Write each test first and watch it fail for the reason it
-  names, then write the code that makes it pass. A test that was never seen
-  failing has not shown it can, and is deleted rather than kept
+- **Load `writing-tests` before writing any test.** Test first, seen failing
+  for the reason it names, against the unit as a black box
 - What to prove rather than assume, and to file a `needs-human` issue instead of
   shipping something it could not verify
 - **The pull request body ends at its last real section.** No generated-with
@@ -211,6 +210,9 @@ report that shows no red for a test, or shows one that failed for another reason
 (an import, a typo, a missing fixture), has not shown the test can catch
 anything. Send it back rather than proving it yourself. A test with no red is
 deleted.
+
+Then **read each new test against `writing-tests`**. Send back one it says is
+not a test, such as one that pins a constant or asserts an internal call.
 
 Remove the verification worktree when done.
 
