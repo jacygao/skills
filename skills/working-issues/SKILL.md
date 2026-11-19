@@ -167,10 +167,10 @@ Every brief carries:
   outputs, or a user's action and what they see, never from its branches.
   Drive it through its public surface and fake only what crosses the network.
   Test this project's code, not a library's behaviour through it, such as a
-  markdown parser's bold. Coverage is not a goal: no test to reach a line, none that checks a
-  constant, a literal, a config value or a data table, and no assertion on an
-  internal call, a mock's arguments or internal state where an observable
-  result exists
+  markdown parser's bold. Coverage is not a goal: no test to reach a line,
+  none that checks a constant, a literal, a config value or a data table, and
+  no assertion on an internal call, a mock's arguments or internal state where
+  an observable result exists
 - What to prove rather than assume, and to file a `needs-human` issue instead of
   shipping something it could not verify
 - **The pull request body ends at its last real section.** No generated-with
