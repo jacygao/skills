@@ -70,6 +70,8 @@ graders:
       - empty input (null, undefined or an empty string) gives an empty string;
       - a web link (http or https) gets target="_blank" and rel="noopener
         noreferrer";
-      - [[<id>|<label>]] becomes a link to /notes/<id> showing the label.
+      - [[<id>|<label>]] becomes a link to /notes/<id> showing the label, in
+        the same tab: an assertion on the whole link with no target, or one
+        that the link has no target="_blank".
 
       FAIL if any of the three is only called and not asserted, or is not tested.

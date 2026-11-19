@@ -49,11 +49,11 @@ graders:
     pattern: 'throw\s'
     target: { source: file, path: test/app.test.js }
 
-  # The fixture's own test ends in assert.ok(true); the skill asks for it to be
-  # deleted, so one more is a new one.
-  - name: no-new-assert-nothing
+  # The fixture's own test ends in assert.ok(true), which the skill says to
+  # delete where found.
+  - name: no-assert-nothing
     type: regex
-    pattern: '(?:assert\.ok\(\s*true\s*\)[\s\S]*?){2}'
+    pattern: 'assert\.ok\(\s*true\s*\)|expect\(\s*true\s*\)'
     match: not_contains
     target: { source: file, path: test/app.test.js }
 
@@ -74,4 +74,5 @@ graders:
 
       FAIL if those tests assert only that nothing threw (assert.doesNotThrow,
       assert.ok(true), or reaching the end of the test), or assert something
-      other than the settings.
+      other than the settings. FAIL also if any test in the file asserts
+      nothing about the app.
