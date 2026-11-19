@@ -1,0 +1,62 @@
+schema_version: "1.1"
+name: writing-tests-next-review-date
+description: >
+  A bug fix is tested through the code that has the bug, not a copy of it in
+  the test. From mono's containers/discover/index.test.js, which tests a copy
+  of getNextReviewDate defined inside the test.
+expected_outcome: >
+  A test calls discoverSummary with a note whose date is not a date, fails,
+  and passes once getNextReviewDate skips such notes. The copy in the test is
+  gone, and getNextReviewDate is not exported to be tested.
+tags: [writing-tests, mono, copy-of-code]
+
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+  prompt: |
+    Read AGENTS.md first.
+
+    Bug: notes imported from another app sometimes carry
+    `nextReviewDate: "pending"`. When one does, `discoverSummary` can report
+    "pending" as the next review date. A note whose `nextReviewDate` is not a
+    valid date should be ignored when finding the next review date.
+
+    Fix it. Edit the files in place and don't commit.
+
+context:
+  scaffold_script: fixture.sh
+
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-tests"'
+
+  - name: invalid-dates-skipped
+    type: regex
+    pattern: 'isNaN|getTime\(\)|Number\.isFinite|valueOf\(\)'
+    target: { source: file, path: src/discover.js }
+
+  - name: tests-still-run
+    type: tool_used
+    tool: Bash
+    input_match: 'node\s+--test|npm\s+(?:run\s+)?test'
+    arm: both
+
+  - name: tested-through-the-module
+    type: regex
+    pattern: '^(?=[\s\S]*from\s+[''"]\.\./src/discover\.js[''"])(?=[\s\S]*discoverSummary\()(?=[\s\S]*pending)'
+    target: { source: file, path: test/discover.test.js }
+
+  - name: no-copy-of-the-code
+    type: regex
+    pattern: '(?:function|const|let|var)\s+getNextReviewDate'
+    match: not_contains
+    target: { source: file, path: test/discover.test.js }
+
+  - name: internal-not-exported
+    type: regex
+    pattern: 'export[^\n]*getNextReviewDate'
+    match: not_contains
+    target: { source: file, path: src/discover.js }

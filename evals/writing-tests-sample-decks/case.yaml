@@ -1,0 +1,71 @@
+schema_version: "1.1"
+name: writing-tests-sample-decks
+description: >
+  A test that pins a data table is deleted when the data changes, not updated.
+  From mono's SampleDecksModal.data.test.js, which asserts the sample decks
+  number exactly three and hold at least six notes each.
+expected_outcome: >
+  The fourth deck is added to SAMPLE_DECKS. The test that pins the deck count
+  is deleted, not raised to four. A test of the new deck, if any, starts it
+  through startSample and reads its notes back, without counting them or
+  repeating the deck's text.
+tags: [writing-tests, mono, data-table]
+
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+  prompt: |
+    Read AGENTS.md first.
+
+    Add a fourth sample deck, "Spanish verbs" (id `spanish-verbs`), with these
+    six flashcards:
+
+    - to be (permanent) / ser
+    - to be (temporary) / estar
+    - to have / tener
+    - to go / ir
+    - to do, to make / hacer
+    - to be able to / poder
+
+    Edit the files in place and don't commit.
+
+context:
+  scaffold_script: fixture.sh
+
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-tests"'
+
+  - name: deck-added
+    type: regex
+    pattern: "spanish-verbs[\\s\\S]*estar[\\s\\S]*poder"
+    target: { source: file, path: src/samples.js }
+
+  - name: tests-still-run
+    type: tool_used
+    tool: Bash
+    input_match: 'node\s+--test|npm\s+(?:run\s+)?test'
+    arm: both
+
+  # The fixture's own count test reads SAMPLE_DECKS, so this fails until it is
+  # deleted.
+  - name: no-test-reads-the-table
+    type: regex
+    pattern: 'SAMPLE_DECKS'
+    match: not_contains
+    target: { source: file, path: test/samples.test.js }
+
+  - name: no-count-of-decks-or-notes
+    type: regex
+    pattern: '(?:length|size)\s*,\s*\d|\.length\s*(?:===?|>=?|<=?)\s*\d|toHaveLength'
+    match: not_contains
+    target: { source: file, path: test/samples.test.js }
+
+  - name: no-copy-of-the-cards
+    type: regex
+    pattern: "Spanish verbs|'(?:ser|estar|tener|hacer|poder)'|\"(?:ser|estar|tener|hacer|poder)\"|to be able to|to be \\((?:permanent|temporary)\\)"
+    match: not_contains
+    target: { source: file, path: test/samples.test.js }

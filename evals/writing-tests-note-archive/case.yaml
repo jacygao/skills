@@ -1,0 +1,62 @@
+schema_version: "1.1"
+name: writing-tests-note-archive
+description: >
+  A new feature is tested by reading the result back, not by asserting a
+  mock's arguments, even where the file's existing tests do. From mono's
+  agent.test.ts (createNote, updateNote, archiveNote), which asserts mockInsert
+  and mockPatch arguments though an in-memory database exists.
+expected_outcome: >
+  archiveNote is added. Its tests use createDb, archive a note, and read it
+  back through getNote and listNotes. No new mock.fn, mock.method or
+  mock.calls assertion is added.
+tags: [writing-tests, mono, mock-arguments]
+
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+  prompt: |
+    Read AGENTS.md first.
+
+    Add `archiveNote(db, id)` to src/notes.js. An archived note is left out of
+    `listNotes`, and `getNote` still returns it, with `archived: true`.
+
+    Edit the files in place and don't commit.
+
+context:
+  scaffold_script: fixture.sh
+
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-tests"'
+
+  - name: archive-added
+    type: regex
+    pattern: 'export\s+(?:async\s+)?function\s+archiveNote'
+    target: { source: file, path: src/notes.js }
+
+  - name: archive-is-tested
+    type: regex
+    pattern: 'archiveNote\('
+    target: { source: file, path: test/notes.test.js }
+
+  - name: tests-still-run
+    type: tool_used
+    tool: Bash
+    input_match: 'node\s+--test|npm\s+(?:run\s+)?test'
+    arm: both
+
+  - name: reads-the-note-back
+    type: regex
+    pattern: 'createDb\(\)[\s\S]*?archiveNote\([\s\S]{0,400}?(?:listNotes|getNote)\('
+    target: { source: file, path: test/notes.test.js }
+
+  # The fixture has two mock.fn and three .mock.calls. Fewer is fine: the
+  # skill asks for such tests to be replaced.
+  - name: no-new-mocks
+    type: regex
+    pattern: '(?:mock\.fn[\s\S]*?){3}|mock\.method|(?:\.mock\.calls[\s\S]*?){4}'
+    match: not_contains
+    target: { source: file, path: test/notes.test.js }

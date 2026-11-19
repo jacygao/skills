@@ -16,6 +16,9 @@ that fails when that behaviour breaks.
   kept.
 - **Then write the code that makes it pass, and refactor with the test kept
   green.** A test written after the code is not one of these.
+- **Asked to test code that already exists, break the behaviour each test
+  names, watch the test fail, and put the code back.** A test that still
+  passes with the behaviour broken tests something else.
 
 ## Test the unit as a black box
 
