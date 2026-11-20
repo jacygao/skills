@@ -120,3 +120,15 @@ graders:
     type: regex
     pattern: '###\s+`squiz\s+version`(?:(?!\n###?\s)[\s\S])*?(?:stdout[\s\S]{0,300}stderr|stderr[\s\S]{0,300}stdout)'
     target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  # Where each half of the line comes from, in the same section.
+  - name: version-comes-from-plugin-json
+    type: regex
+    pattern: '###\s+`squiz\s+version`(?:(?!\n###?\s)[\s\S])*?\bversion\b(?:(?!\n\n|\.\s)[\s\S])*?plugin\.json'
+    target: { source: file, path: docs/specs/review-harness-spec.md }
+
+  - name: path-is-the-real-path
+    type: regex
+    pattern: '###\s+`squiz\s+version`(?:(?!\n###?\s)[\s\S])*?(?:real\s+path|resolved\s+path|symlinks?\s+resolved)'
+    flags: i
+    target: { source: file, path: docs/specs/review-harness-spec.md }
