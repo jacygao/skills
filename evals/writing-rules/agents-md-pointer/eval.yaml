@@ -71,3 +71,4 @@ stimuli:
 
                 FAIL if any added sentence describes the header format, explains loading
                 beyond that one line, or says why the layout was chosen, rather than
+                telling the agent what to do.

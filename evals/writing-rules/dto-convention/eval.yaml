@@ -73,3 +73,4 @@ stimuli:
                 FAIL if it adds rules about anything else in DTO classes, such as class vs
                 record, property defaults, nullability, mapping methods, type suffixes,
                 file layout or extension data. FAIL if it says every property must carry
+                `[JsonProperty]`: some request classes in this repository have none.

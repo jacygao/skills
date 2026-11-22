@@ -62,7 +62,7 @@ stimuli:
         config: { path: issues/new.md, pattern: "(?m)^Labels:[^\\n]*\\n[\\s\\S]*?(?:\\bP[0-2]\\b|[Pp]riority)", negate: true }
       - name: acceptance-criteria-are-checkboxes
         type: file-matches
-        config: { path: issues/new.md, pattern: "## Acceptance criteria[^\\n]*\\n(?:(?!\\n## )[\\s\\S])*?\\n(?!- \\[ \\]|[ \\t]|\\n|## )\\S", negate: true }
+        config: { path: issues/new.md, pattern: "## Acceptance criteria[^\\n]*(?:\\n(?!## )[^\\n]*)*?\\n(?!- \\[ \\]|[ \\t]|## )\\S", negate: true }
       - name: judges
         type: panel
         config:

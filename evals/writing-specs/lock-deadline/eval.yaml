@@ -86,3 +86,4 @@ stimuli:
 
                 FAIL if the paragraph says why a lock could be taken late (a slow
                 process listing, machine load), describes the incident, or narrates an
+                example.

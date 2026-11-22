@@ -46,6 +46,6 @@ graders:
     target: { source: file, path: issues/new.md }
   - name: acceptance-criteria-are-checkboxes
     type: regex
-    pattern: '## Acceptance criteria[^\n]*\n(?:(?!\n## )[\s\S])*?\n(?!- \[ \]|[ \t]|\n|## )\S'
+    pattern: '## Acceptance criteria[^\n]*(?:\n(?!## )[^\n]*)*?\n(?!- \[ \]|[ \t]|## )\S'
     match: not_contains
     target: { source: file, path: issues/new.md }

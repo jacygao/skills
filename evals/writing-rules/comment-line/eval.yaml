@@ -63,6 +63,7 @@ stimuli:
                   new section, no change to the header.
 
                 FAIL if it added an example or a second rule, or changed anything
+                unrelated to this rule.
       - name: no-justification
         type: panel
         config:
@@ -85,3 +86,4 @@ stimuli:
 
                 FAIL if the added text carries any reason, consequence or justification
                 for the rule, even one clause, such as "a comment that repeats the code
+                drifts from it" or "one more thing to keep in step".

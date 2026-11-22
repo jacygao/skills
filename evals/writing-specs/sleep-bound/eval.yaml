@@ -89,3 +89,4 @@ stimuli:
                 the bound, or as "at most twice its bound").
 
                 FAIL if they say how a sleep is detected, or narrate the bug (a round
+                killed on waking).

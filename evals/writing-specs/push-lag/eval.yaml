@@ -99,3 +99,4 @@ stimuli:
 
                 FAIL if they explain why GitHub reports an old head, or spell out the
                 comparison used to detect it: which ref is compared with which head's
+                history, or whether the repository has the head.
