@@ -3,6 +3,7 @@ description: "A security bug where the spec itself states the faulty behavior, s
 defaults:
   runs: 3
   timeout: 10m
+  judge_timeout: 5m
   executor: copilot-sdk
   model: claude-opus-5.5
 scoring:

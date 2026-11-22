@@ -3,6 +3,7 @@ description: "A bug that only happens under a condition, seen in a benchmark and
 defaults:
   runs: 3
   timeout: 10m
+  judge_timeout: 5m
   executor: copilot-sdk
   model: claude-opus-5.5
 scoring:

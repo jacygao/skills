@@ -3,6 +3,7 @@ description: "A task with several acceptance criteria, each to be one testable c
 defaults:
   runs: 3
   timeout: 10m
+  judge_timeout: 5m
   executor: copilot-sdk
   model: claude-opus-5.5
 scoring:

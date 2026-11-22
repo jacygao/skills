@@ -3,6 +3,7 @@ description: "A bug whose broken part has to be found in the spec. From squiz #9
 defaults:
   runs: 3
   timeout: 10m
+  judge_timeout: 5m
   executor: copilot-sdk
   model: claude-opus-5.5
 scoring:

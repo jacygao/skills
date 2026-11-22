@@ -3,6 +3,7 @@ description: "A bug in images the project does not own, with its evidence from r
 defaults:
   runs: 3
   timeout: 10m
+  judge_timeout: 5m
   executor: copilot-sdk
   model: claude-opus-5.5
 scoring:

@@ -3,6 +3,7 @@ description: "A choice the spec does not make, which has to be filed as a decisi
 defaults:
   runs: 3
   timeout: 10m
+  judge_timeout: 5m
   executor: copilot-sdk
   model: claude-opus-5.5
 scoring:

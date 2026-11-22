@@ -44,7 +44,7 @@ for case in cases:
     panel = open(f'{J}/_panel.txt').read().replace('{request}', prompt)
 
     out = [f'name: writing-issues-{case}', f'description: {q(desc)}',
-           'defaults:', '  runs: 3', '  timeout: 10m', '  executor: copilot-sdk', '  model: claude-opus-5.5',
+           'defaults:', '  runs: 3', '  timeout: 10m', '  judge_timeout: 5m', '  executor: copilot-sdk', '  model: claude-opus-5.5',
            # Weights are per grader type; these give every scored grader an
            # equal share. Skill use is an indicator.
            'scoring:', '  threshold: 0.8', '  weights:', '    skill-invocation: 0',
