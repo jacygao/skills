@@ -1,0 +1,4 @@
+Question: does the section headed "What happens", or a heading meaning the
+same such as "What happened" or "Problem", name a code location (a file,
+function or line), state a diagnosis of why it happens, or propose a fix? An
+issue with no such section answers no.

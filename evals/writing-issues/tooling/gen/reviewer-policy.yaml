@@ -1,0 +1,29 @@
+# The case. Its fixture is ../../reviewer-policy/fixture.sh.
+description: >
+  A choice the spec does not make, which has to be filed as a decision rather
+  than a bug or a settled task. From squiz #763: how the reviewer reports a
+  defect in code the change did not touch or cause.
+expected_outcome: >
+  A task whose job is the owner's decision, with each option stated as it
+  would behave under the spec (an open thread at any severity keeps the review
+  going), and no option presented as settled.
+prompt: |
+  Read AGENTS.md first.
+
+  #579 tuned the reviewer's charter against the eval, and left one thing out
+  as a policy choice the eval could not settle: what the reviewer does with a
+  defect it notices in code the pull request did not change and did not
+  cause. #579's finding is in
+  `docs/notes/only-the-sibling-and-stale-document-rules-change-what-the-reviewer-reports.md`.
+  These came up as the ways it could go:
+
+  - report it at low, as a thread
+  - not report it at all
+  - report it at its real severity, as a thread
+  - report it at its real severity, marked as existing before the change, in
+    the summary rather than as a thread
+
+  The owner has to choose. It is P2: until then the reviewer uses its own
+  judgement, as it has so far.
+
+  File an issue for it.

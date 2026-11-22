@@ -1,0 +1,8 @@
+Question: is the issue missing a part that its kind needs, under any heading?
+- A bug needs: what happens, as observed; what should happen instead, meaning
+  the behavior once it is fixed; and either steps to reproduce it or the
+  evidence that it happens. A list of next steps, investigations or open
+  questions is not what should happen.
+- A task needs: what the work achieves, and the checks that say it is done.
+A part counts wherever it is and whatever its heading, so long as it does that
+job. Its kind is its label, or what it is: a problem observed, or work to do.

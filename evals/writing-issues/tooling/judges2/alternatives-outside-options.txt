@@ -1,0 +1,1 @@
+Question: outside a section headed "Options", does the issue offer more than one outcome or fix to choose from ("either ... or ...", "one of", "whichever is chosen", leaving the fix to someone)? An acceptance criterion asking someone to choose among the options the issue lists under "Options", or another, does not count.

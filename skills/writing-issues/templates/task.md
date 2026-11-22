@@ -1,6 +1,6 @@
 ---
 name: Task
-about: A unit of work, with the criteria that say when it is done
+about: A unit of work, or a decision, with the criteria that say when it is done
 title: ''
 labels: task
 assignees: ''
@@ -8,17 +8,29 @@ assignees: ''
 
 ## Purpose
 
-<!-- One sentence. If it needs two, it is probably two issues. -->
+<!-- One sentence: what the work delivers, or the decision it makes. If it
+     needs two, it is probably two issues. -->
+
+## Context
+
+<!-- Optional. The finding or the gap behind the work. -->
+
+## Options
+
+<!-- Only when the issue's job is a decision the spec does not make. Each
+     option as concretely as an outcome: what it would do, and what it costs. -->
 
 ## Acceptance criteria
 
+<!-- Each one check that passes or fails on its own. -->
+
 - [ ]
-- [ ] <the project's tests and checks pass>
+- [ ] <the project's checks pass>
 
 ## Reference
 
-<!-- Whatever governs this and is worth reading first: a spec section, a design
-     doc, an RFC, a ticket, a URL. Delete the section if there is nothing. -->
+<!-- Optional. What governs this: a spec section, a doc, a linked issue.
+     "Found while ..." is the last bullet. -->
 
-<!-- A blocker is a relationship, not a line here: set it in the sidebar under
-     Relationships, or with gh issue edit --add-blocked-by. -->
+<!-- Priority is a label, not a line here. A blocker is a relationship: set it
+     in the sidebar under Relationships, or with gh issue edit --add-blocked-by. -->

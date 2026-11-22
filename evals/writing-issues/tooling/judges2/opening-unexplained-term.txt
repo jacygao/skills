@@ -1,0 +1,1 @@
+Question: does the first sentence of the body use the name of an internal component, state, file or function, one a user of the product would not know, without saying what it is? Commands, settings and files the user runs or edits are not internal.

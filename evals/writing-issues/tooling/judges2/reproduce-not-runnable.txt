@@ -1,0 +1,8 @@
+Question: in the section headed "Reproduce", or a heading meaning the same such
+as "Steps to reproduce", is there a line that is none of these three?
+- a step someone can carry out: a command, or an action and what it takes
+- what a step produced
+- a comment on one of those lines
+A line saying the problem was not reproduced, describing a run seen elsewhere,
+or giving a diagnosis or a note, is none of the three. Blank lines and code
+fences are not lines of the section. An issue with no such section answers no.

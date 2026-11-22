@@ -1,0 +1,6 @@
+You are also given the sources the issue was written from. Question: do the sources decide the outcome the issue is about, and the issue still offers more than one outcome or fix, in an Options section or anywhere else?
+
+Where the sources disagree with themselves, a thing's definition (its usage
+line, the arguments it lists, its description or contract) outranks an example
+or a passing mention that contradicts it, and an example a definition outranks
+requires nothing.

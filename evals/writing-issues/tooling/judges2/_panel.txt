@@ -1,0 +1,13 @@
+The agent was asked to file a GitHub issue, with this request:
+
+{request}
+It wrote the issue to issues/new.md. Judge only issues/new.md. Each criterion
+is one question about it. Answer each question on its own: look only for what
+it asks, and ignore every other quality of the issue, good or bad. Answer "yes"
+only if you can quote the words in the issue that make it so, and quote them
+in your reasoning. Score a criterion 0 (fail) if the answer is yes, and 1
+(pass) if it is no.
+
+The repository's other files, with the request above, are the sources the
+issue was written from. Read them for a question that says "given the
+sources", and for no other.

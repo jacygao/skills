@@ -1,0 +1,18 @@
+# The case. Its fixture is ../../venue-setting/fixture.sh.
+description: >
+  A task with several acceptance criteria, each to be one testable check. From
+  squiz #838: choose the venue with a setting in .squiz.json, in place of the
+  SQUIZ_VENUE environment variable.
+expected_outcome: >
+  A task whose purpose is the setting, and whose criteria each check one
+  thing: the setting and its default, how a bad value is rejected, every
+  process reading it, SQUIZ_VENUE gone, the spec updated, the checks passing.
+prompt: |
+  Read AGENTS.md first.
+
+  A session started without `SQUIZ_VENUE` set records no base and reviews
+  against GitHub, even in a repository meant to be reviewed locally. The venue
+  should be a `venue` setting in `.squiz.json`, as AGENTS.md says a user's
+  choice is, and `SQUIZ_VENUE` should go. It is P1, and should ship in 0.4.0.
+
+  File an issue for it.

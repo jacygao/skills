@@ -1,0 +1,24 @@
+# The case. Its fixture is ../../token-in-shell/fixture.sh.
+description: >
+  A security bug where the spec itself states the faulty behavior, so the fix
+  changes the spec as well as the code. From swe-drill #296: the coding agent's
+  shell commands inherit the Copilot token.
+expected_outcome: >
+  A bug saying any command the agent runs can read the token, that no shell or
+  MCP server Copilot CLI starts should have it while Copilot CLI still signs in
+  with it, and that § 4's CopilotCli row changes to say so.
+prompt: |
+  Read AGENTS.md first.
+
+  `CopilotCli` gives Copilot CLI `COPILOT_GITHUB_TOKEN` in its environment,
+  and every shell command the agent runs inherits it. A command such as
+  `printenv COPILOT_GITHUB_TOKEN` prints the token into the tool result, which
+  sends it to the model, and it is saved in the trial's `agent/copilot.txt`.
+  Copilot CLI's `--secret-env-vars COPILOT_GITHUB_TOKEN` removes the variable
+  from every shell and MCP server Copilot CLI starts, while Copilot CLI itself
+  still signs in with it. Its help says a value that reaches a tool result
+  another way still goes to the model. The judge and the validation agent
+  already pass it. No local trial file of 30,476 scanned today holds the
+  current token.
+
+  File an issue for it.
