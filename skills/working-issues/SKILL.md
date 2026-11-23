@@ -258,7 +258,9 @@ written, which tests to run, whether a finding is fixed here or filed as its
 own issue.
 
 **Act on a proposed split.** File the parts as sub-issues through
-`triaging-issues` § 5, and dispatch the part the subagent said lands first. Or
+`triaging-issues` § 5, each with every label the parent carries, so a frontier
+that reads the parent's labels finds them. Dispatch the part the subagent said
+lands first. Or
 let the pull request go ahead, and say in your report why one review can still
 check it.
 

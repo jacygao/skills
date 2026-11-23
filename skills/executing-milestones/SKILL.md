@@ -59,14 +59,19 @@ epic=$(gh issue list --label "milestone:$milestone" --state all --limit 100 \
 Nothing back means the milestone has not been planned. Two numbers back means
 two epics for one milestone, which splits the tree. Either way, say so and stop.
 
-Then read the frontier, the sub-issues with no open blocker. **Readiness is true
-at the moment it is computed and wrong after the next merge**, so compute it
-here and never carry it forward:
+First close any split issue whose sub-issues are all closed, as `working-issues`
+§ 1 does for a GitHub milestone. A split issue is done through its sub-issues,
+so it is never dispatched itself.
+
+Then read the frontier, the sub-issues with no open blocker and no sub-issues of
+their own. **Readiness is true at the moment it is computed and wrong after the
+next merge**, so compute it here and never carry it forward:
 
 ```bash
 gh issue list --label "milestone:$milestone" --state open --limit 100 \
-  --json number,title,parent,blockedBy \
-  --jq '[.[] | select(.parent != null)] | sort_by(.number) | .[]
+  --json number,title,parent,blockedBy,subIssuesSummary \
+  --jq '[.[] | select(.parent != null and .subIssuesSummary.total == 0)]
+        | sort_by(.number) | .[]
         | "\(if ([.blockedBy.nodes[] | select(.state == "OPEN")] | length) == 0
              then "READY  " else "blocked" end)  #\(.number)  \(.title)"'
 ```
@@ -82,8 +87,8 @@ gh api "repos/{owner}/{repo}/issues/$epic/sub_issues" --paginate \
 ```
 
 A number here that the frontier did not list is a sub-issue the listing cannot
-yet see. Read those with `gh issue view <n> --json blockedBy` rather than
-waiting for the index.
+yet see. Read those with `gh issue view <n> --json blockedBy,subIssuesSummary`
+rather than waiting for the index, and pass over one with sub-issues.
 
 ## 2. Hand the ready issues to working-issues
 
