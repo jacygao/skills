@@ -14,7 +14,7 @@ that fails when that behaviour breaks.
 - **Write the test first, and watch it fail for the reason it names.** A test
   that was never seen failing has not shown it can, and is deleted rather than
   kept.
-- **Then write the code that makes it pass, and refactor with the test kept
+- **Then write the code that makes it pass, and refactor with the tests kept
   green.** A test written after the code is not one of these.
 - **Asked to test code that already exists, break the behaviour each test
   names, watch the test fail, and put the code back.** A test that still
