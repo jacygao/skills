@@ -74,7 +74,7 @@ stimuli:
       # what only it checked is two regexes.
       - name: not-from-cwd-or-path
         type: file-matches
-        config: { path: docs/specs/review-harness-spec.md, pattern: "(?:working|current)\\s+directory[\\s\\S]{0,120}PATH|directory\\s+(?:it|squiz)\\s+is\\s+run\\s+from[\\s\\S]{0,120}PATH", negate: false }
+        config: { path: docs/specs/review-harness-spec.md, pattern: "(?:working|current)\\s+directory[\\s\\S]{0,120}PATH|directory\\s+(?:it|squiz)\\s+is\\s+run\\s+from[\\s\\S]{0,120}PATH|###\\s+`squiz\\s+version`(?:(?!\\n###?\\s)[\\s\\S])*?The\\s+link", negate: false }
       - name: exits-1-when-unreadable
         type: file-matches
         config: { path: docs/specs/review-harness-spec.md, pattern: "plugin\\.json[\\s\\S]{0,500}(?:exits?\\s+(?:with\\s+)?1|exit\\s+is\\s+1|exit\\s+status\\s+(?:is\\s+)?1)", negate: false }
@@ -94,4 +94,4 @@ stimuli:
         config: { path: docs/specs/review-harness-spec.md, pattern: "###\\s+`squiz\\s+version`(?:(?!\\n###?\\s)[\\s\\S])*?\\bversion\\b(?:(?!\\n\\n|\\.\\s)[\\s\\S])*?plugin\\.json", negate: false }
       - name: path-is-the-real-path
         type: file-matches
-        config: { path: docs/specs/review-harness-spec.md, pattern: "(?i)###\\s+`squiz\\s+version`(?:(?!\\n###?\\s)[\\s\\S])*?(?:real\\s+path|resolved\\s+path|symlinks?\\s+resolved)", negate: false }
+        config: { path: docs/specs/review-harness-spec.md, pattern: "(?i)###\\s+`squiz\\s+version`(?:(?!\\n###?\\s)[\\s\\S])*?(?:real\\s+path|resolved\\s+path|symlinks?\\s+resolved|The\\s+link)", negate: false }
