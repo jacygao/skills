@@ -50,8 +50,7 @@ gh issue list --state open --limit 500 --json number,title,labels,milestone \
 Read each body and its last comments, not just the title. A title says what was
 seen; the body and comments say what it costs and what has changed since.
 
-Read issues with `--json` throughout, never the rendered text output. That
-output is laid out for a person reading a terminal, and its shape is not a
+Read issues with `--json`, never the rendered text, whose layout is not a
 contract.
 
 ## 3. Propose
@@ -131,31 +130,21 @@ file, say so in both issues, because the second to merge needs a rebase.
 gh issue edit 45 --add-blocked-by 43 --add-blocked-by 44
 ```
 
-Verify: a sub-issue that failed to attach, or a blocker that failed to post,
-looks exactly like one that was never set.
-
-```bash
-gh issue view 42 --json subIssuesSummary --jq '.subIssuesSummary.total'
-gh issue list --milestone 0.1.0 --state open --limit 200 \
-  --json number,title,blockedBy \
-  --jq '.[] | "#\(.number) \(.title) — blocked by \(.blockedBy.totalCount)"'
-```
-
 ## 6. Present and stop
 
-Print each release's issues with their priority, sub-issues and blockers, and
-the frontier: the issues with no open blocker and no sub-issues.
+Print each release's issues with their priority, sub-issues and open blockers.
+The listing is also the check on § 5: a sub-issue that failed to attach, or a
+blocker that failed to post, looks exactly like one that was never set.
 
 ```bash
 gh issue list --milestone 0.1.0 --state open --limit 200 \
-  --json number,title,blockedBy,subIssuesSummary \
-  --jq '.[] | select(.subIssuesSummary.total == 0)
-        | select([.blockedBy.nodes[] | select(.state == "OPEN")] | length == 0)
-        | "#\(.number) \(.title)"'
+  --json number,title,labels,blockedBy,subIssuesSummary \
+  --jq '.[] | "#\(.number)  \([.labels[].name | select(test("^P[012]$"))] | join(","))  sub-issues \(.subIssuesSummary.total)  open blockers \([.blockedBy.nodes[] | select(.state == "OPEN")] | length)  \(.title)"'
 ```
 
-Do not store the frontier in an issue. Readiness is true at the moment it is
-computed and wrong after the next merge.
+Name the frontier, the issues with no open blocker and no sub-issues, as
+`working-issues` § 1 reads it. Do not store it in an issue: readiness is true at
+the moment it is computed and wrong after the next merge.
 
 Then stop. Do not begin implementation; that is the `working-issues` skill, and
 the caller starts it.

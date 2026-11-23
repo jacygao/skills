@@ -1,0 +1,12 @@
+# This branch's working-issues against main's. Extract main's first:
+#   mkdir -p ../results/baseline-skills && git -C ../.. archive main skills/working-issues | tar -x -C ../results/baseline-skills
+# then: vally experiment run change.experiment.yaml
+name: working-issues-change
+evals: ["size-in-the-brief/eval.yaml", "acts-on-split/eval.yaml"]
+vary: ["/environment/skills"]
+baseline: main
+variants:
+  branch: {}
+  main:
+    environment:
+      skills: [../results/baseline-skills/skills/working-issues, ../../skills/triaging-issues, ../../skills/writing-issues]
