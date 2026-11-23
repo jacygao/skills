@@ -1,0 +1,53 @@
+# Expected: The fourth deck is added to SAMPLE_DECKS. The test that pins the deck count is deleted, not raised to four. A test of the new deck, if any, starts it through startSample and reads its notes back, without counting them or repeating the deck's text.
+name: writing-tests-sample-decks
+description: "A test that pins a data table is deleted when the data changes, not updated. From mono's SampleDecksModal.data.test.js, which asserts the sample decks number exactly three and hold at least six notes each."
+defaults:
+  runs: 3
+  timeout: 10m
+  judge_timeout: 5m
+  executor: copilot-sdk
+  model: claude-opus-5.5
+scoring:
+  threshold: 0.8
+  weights:
+    skill-invocation: 0
+    tool-calls: 0.2
+    file-matches: 0.8
+agent_environment:
+  skills: [../../../skills/writing-tests]
+  files: [{ src: workspace, dest: . }]
+stimuli:
+  - name: sample-decks
+    prompt: |
+      Read AGENTS.md first.
+
+      Add a fourth sample deck, "Spanish verbs" (id `spanish-verbs`), with these
+      six flashcards:
+
+      - to be (permanent) / ser
+      - to be (temporary) / estar
+      - to have / tener
+      - to go / ir
+      - to do, to make / hacer
+      - to be able to / poder
+
+      Edit the files in place and don't commit.
+    graders:
+      - name: skill-loaded
+        type: skill-invocation
+        config: { required: [writing-tests] }
+      - name: deck-added
+        type: file-matches
+        config: { path: src/samples.js, pattern: "spanish-verbs[\\s\\S]*estar[\\s\\S]*poder", negate: false }
+      - name: tests-still-run
+        type: tool-calls
+        config: { required: [{ name: "^bash$", command: "node\\s+--test|npm\\s+(?:run\\s+)?test" }] }
+      - name: no-test-reads-the-table
+        type: file-matches
+        config: { path: test/samples.test.js, pattern: "SAMPLE_DECKS", negate: true }
+      - name: no-count-of-decks-or-notes
+        type: file-matches
+        config: { path: test/samples.test.js, pattern: "(?:length|size)\\s*,\\s*\\d|\\.length\\s*(?:===?|>=?|<=?)\\s*\\d|toHaveLength", negate: true }
+      - name: no-copy-of-the-cards
+        type: file-matches
+        config: { path: test/samples.test.js, pattern: "Spanish verbs|'(?:ser|estar|tener|hacer|poder)'|\"(?:ser|estar|tener|hacer|poder)\"|to be able to|to be \\((?:permanent|temporary)\\)", negate: true }
