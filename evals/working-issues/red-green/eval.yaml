@@ -49,9 +49,9 @@ stimuli:
             - |
               set -e
               dir=
-              for d in . $(git worktree list --porcelain | sed -n 's/^worktree //p'); do
+              while IFS= read -r d; do
                 [ -f "$d/src/slugify.js" ] && { dir=$d; break; }
-              done
+              done < <(echo .; git worktree list --porcelain | sed -n 's/^worktree //p')
               if [ -z "$dir" ]; then
                 for r in $(git for-each-ref --format='%(refname:short)' refs/heads); do
                   if git cat-file -e "$r:src/slugify.js" 2>/dev/null; then
