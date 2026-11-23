@@ -1,0 +1,6 @@
+You are also given the sources the issue was written from. Question: do the sources leave the outcome the issue is about undecided, and the issue still states one outcome as settled, with no options and no request for someone to choose? The outcome is the behavior or result the issue asks for, not how it is built: an issue that proposes how to reach an outcome the sources decide settles nothing.
+
+Where the sources disagree with themselves, a thing's definition (its usage
+line, the arguments it lists, its description or contract) outranks an example
+or a passing mention that contradicts it, and an example a definition outranks
+requires nothing.

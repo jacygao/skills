@@ -1,0 +1,6 @@
+You are also given the sources the issue was written from. Question: does the issue state, as how things are now, something the sources contradict: a command, output, file path, line number, section, number, or what the code or spec does? What the issue asks to change is not a statement of how things are now.
+
+Where the sources disagree with themselves, a thing's definition (its usage
+line, the arguments it lists, its description or contract) outranks an example
+or a passing mention that contradicts it, and an example a definition outranks
+requires nothing.

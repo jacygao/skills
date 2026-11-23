@@ -1,0 +1,119 @@
+name: writing-issues-reviewer-policy
+description: "A choice the spec does not make, which has to be filed as a decision rather than a bug or a settled task. From squiz #763: how the reviewer reports a defect in code the change did not touch or cause."
+defaults:
+  runs: 3
+  timeout: 10m
+  judge_timeout: 5m
+  executor: copilot-sdk
+  model: claude-opus-5.5
+scoring:
+  threshold: 0.8
+  weights:
+    skill-invocation: 0
+    file-matches: 0.35
+    panel: 0.65
+agent_environment:
+  skills: [../../../skills/writing-issues]
+  files: [{ src: workspace, dest: . }]
+  commands: ['git init -q -b main && git add -A && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m "Initial commit"']
+stimuli:
+  - name: reviewer-policy
+    prompt: |
+      Read AGENTS.md first.
+
+      #579 tuned the reviewer's charter against the eval, and left one thing out
+      as a policy choice the eval could not settle: what the reviewer does with a
+      defect it notices in code the pull request did not change and did not
+      cause. #579's finding is in
+      `docs/notes/only-the-sibling-and-stale-document-rules-change-what-the-reviewer-reports.md`.
+      These came up as the ways it could go:
+
+      - report it at low, as a thread
+      - not report it at all
+      - report it at its real severity, as a thread
+      - report it at its real severity, marked as existing before the change, in
+        the summary rather than as a thread
+
+      The owner has to choose. It is P2: until then the reviewer uses its own
+      judgement, as it has so far.
+
+      File an issue for it.
+    graders:
+      - name: skill-loaded
+        type: skill-invocation
+        config: { required: [writing-issues] }
+      - name: labelled-with-a-kind
+        type: file-matches
+        config: { path: issues/new.md, pattern: "(?m)^Labels:[^\\n]*\\b(?:bug|task)\\b", negate: false }
+      - name: kind-matches-sections
+        type: file-matches
+        config: { path: issues/new.md, pattern: "(?m)^Labels:[^\\n]*\\bbug\\b[\\s\\S]*^## What happens|^Labels:[^\\n]*\\btask\\b[\\s\\S]*^## Purpose", negate: false }
+      - name: headings-from-the-list
+        type: file-matches
+        config: { path: issues/new.md, pattern: "(?m)^## (?!(?:What happens|What should happen|Reproduce|Evidence|Cause|Options|Reference|Purpose|Context|Acceptance criteria)\\s*$)", negate: true }
+      - name: has-the-kind-s-sections
+        type: file-matches
+        config: { path: issues/new.md, pattern: "^(?=[\\s\\S]*\\n## What happens\\s*\\n)(?=[\\s\\S]*\\n## What should happen\\s*\\n)(?=[\\s\\S]*\\n## (?:Reproduce|Evidence)\\s*\\n)|^(?=[\\s\\S]*\\n## Purpose\\s*\\n)(?=[\\s\\S]*\\n## Acceptance criteria\\s*\\n)", negate: false }
+      - name: headings-in-order
+        type: file-matches
+        config: { path: issues/new.md, pattern: "## What should happen[\\s\\S]*## What happens|## (?:Reproduce|Evidence)[\\s\\S]*## What (?:should )?happen|## Cause[\\s\\S]*## (?:Reproduce|Evidence|What)|## Options[\\s\\S]*## (?:Cause|Reproduce|Evidence|What|Context|Purpose)|## Reference[\\s\\S]*\\n## |## Acceptance criteria[\\s\\S]*## (?:Purpose|Context|Options)|## Context[\\s\\S]*## Purpose|## (?:What happens|What should happen|Reproduce|Evidence|Cause)[\\s\\S]*## (?:Purpose|Context|Acceptance criteria)|## (?:Purpose|Context|Acceptance criteria)[\\s\\S]*## (?:What happens|What should happen|Reproduce|Evidence|Cause)", negate: true }
+      - name: no-priority-in-body
+        type: file-matches
+        config: { path: issues/new.md, pattern: "(?m)^Labels:[^\\n]*\\n[\\s\\S]*?(?:\\bP[0-2]\\b|[Pp]riority)", negate: true }
+      - name: acceptance-criteria-are-checkboxes
+        type: file-matches
+        config: { path: issues/new.md, pattern: "## Acceptance criteria[^\\n]*(?:\\n(?!## )[^\\n]*)*?\\n(?!- \\[ \\]|[ \\t]|## )\\S", negate: true }
+      - name: judges
+        type: panel
+        config:
+          models: [gpt-6.2-astra]
+          aggregation: majority
+          scoring: binary
+          evidence: [{ source: repo }]
+          prompt: |
+            The agent was asked to file a GitHub issue, with this request:
+
+            Read AGENTS.md first.
+
+            #579 tuned the reviewer's charter against the eval, and left one thing out
+            as a policy choice the eval could not settle: what the reviewer does with a
+            defect it notices in code the pull request did not change and did not
+            cause. #579's finding is in
+            `docs/notes/only-the-sibling-and-stale-document-rules-change-what-the-reviewer-reports.md`.
+            These came up as the ways it could go:
+
+            - report it at low, as a thread
+            - not report it at all
+            - report it at its real severity, as a thread
+            - report it at its real severity, marked as existing before the change, in
+              the summary rather than as a thread
+
+            The owner has to choose. It is P2: until then the reviewer uses its own
+            judgement, as it has so far.
+
+            File an issue for it.
+
+            It wrote the issue to issues/new.md. Judge only issues/new.md. Each criterion
+            is one question about it. Answer each question on its own: look only for what
+            it asks, and ignore every other quality of the issue, good or bad. Answer "yes"
+            only if you can quote the words in the issue that make it so, and quote them
+            in your reasoning. Score a criterion 0 (fail) if the answer is yes, and 1
+            (pass) if it is no.
+
+            The repository's other files, with the request above, are the sources the
+            issue was written from. Read them for a question that says "given the
+            sources", and for no other.
+          criteria:
+            - { name: title-two-facts, description: "Question: does the title (the first line) join two statements into one, with \"which\", \"where\", \"but\", \"so\", \"and\", \"while\", a comma clause or the like?" }
+            - { name: opening-internal-first, description: "Question: does the first sentence of the body open with a clause saying when, or under what condition, the problem happens (\"When ...\", \"If ...\", \"Once ...\", \"On ...\"), before it says what goes wrong?" }
+            - { name: opening-unexplained-term, description: "Question: does the first sentence of the body use the name of an internal component, state, file or function, one a user of the product would not know, without saying what it is? Commands, settings and files the user runs or edits are not internal." }
+            - { name: alternatives-outside-options, description: "Question: outside a section headed \"Options\", does the issue offer more than one outcome or fix to choose from (\"either ... or ...\", \"one of\", \"whichever is chosen\", leaving the fix to someone)? An acceptance criterion asking someone to choose among the options the issue lists under \"Options\", or another, does not count." }
+            - { name: offers-choice-spec-decides, description: "You are also given the sources the issue was written from. Question: do the sources decide the outcome the issue is about, and the issue still offers more than one outcome or fix, in an Options section or anywhere else?\n\nWhere the sources disagree with themselves, a thing's definition (its usage\nline, the arguments it lists, its description or contract) outranks an example\nor a passing mention that contradicts it, and an example a definition outranks\nrequires nothing." }
+            - { name: settles-undecided, description: "You are also given the sources the issue was written from. Question: do the sources leave the outcome the issue is about undecided, and the issue still states one outcome as settled, with no options and no request for someone to choose? The outcome is the behavior or result the issue asks for, not how it is built: an issue that proposes how to reach an outcome the sources decide settles nothing.\n\nWhere the sources disagree with themselves, a thing's definition (its usage\nline, the arguments it lists, its description or contract) outranks an example\nor a passing mention that contradicts it, and an example a definition outranks\nrequires nothing." }
+            - { name: blames-conforming-part, description: "You are also given the sources the issue was written from. Question: does the issue say a part is wrong, or ask for it to change, when by the sources that part already behaves as its definition says, and the issue does not say the definition itself is wrong and ask for it to change too?\n\nWhere the sources disagree with themselves, a thing's definition (its usage\nline, the arguments it lists, its description or contract) outranks an example\nor a passing mention that contradicts it, and an example a definition outranks\nrequires nothing." }
+            - { name: contradicts-sources, description: "You are also given the sources the issue was written from. Question: does the issue state, as how things are now, something the sources contradict: a command, output, file path, line number, section, number, or what the code or spec does? What the issue asks to change is not a statement of how things are now.\n\nWhere the sources disagree with themselves, a thing's definition (its usage\nline, the arguments it lists, its description or contract) outranks an example\nor a passing mention that contradicts it, and an example a definition outranks\nrequires nothing." }
+            - { name: vague-outcome, description: "Question: does \"What should happen\" (or a heading meaning the same, such as \"Expected behavior\"), or any item under \"Acceptance criteria\" (or a heading meaning the same, such as \"Done when\"), contain a phrase that names no observable result, such as \"works correctly\", \"behaves as expected\", \"is handled\" or \"does what it says\"? Answer yes if such a phrase appears at all. Do not weigh what follows it: concrete words after it do not change the answer." }
+            - { name: bundled-criterion, description: "Question: does any single item under \"Acceptance criteria\", or a heading meaning the same such as \"Done when\", hold two or more checks that could pass or fail independently of each other? One property stated of a list of things, and one command the project runs as its check, are each one check. An issue with no such section answers no." }
+            - { name: cause-in-what-happens, description: "Question: does the section headed \"What happens\", or a heading meaning the\nsame such as \"What happened\" or \"Problem\", name a code location (a file,\nfunction or line), state a diagnosis of why it happens, or propose a fix? An\nissue with no such section answers no." }
+            - { name: reproduce-not-runnable, description: "Question: in the section headed \"Reproduce\", or a heading meaning the same such\nas \"Steps to reproduce\", is there a line that is none of these three?\n- a step someone can carry out: a command, or an action and what it takes\n- what a step produced\n- a comment on one of those lines\nA line saying the problem was not reproduced, describing a run seen elsewhere,\nor giving a diagnosis or a note, is none of the three. Blank lines and code\nfences are not lines of the section. An issue with no such section answers no." }
+            - { name: missing-part, description: "Question: is the issue missing a part that its kind needs, under any heading?\n- A bug needs: what happens, as observed; what should happen instead, meaning\n  the behavior once it is fixed; and either steps to reproduce it or the\n  evidence that it happens. A list of next steps, investigations or open\n  questions is not what should happen.\n- A task needs: what the work achieves, and the checks that say it is done.\nA part counts wherever it is and whatever its heading, so long as it does that\njob. Its kind is its label, or what it is: a problem observed, or work to do." }

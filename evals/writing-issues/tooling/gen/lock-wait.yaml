@@ -1,0 +1,32 @@
+# The case. It starts from ../../lock-wait/workspace/.
+description: >
+  A bug that only happens under a condition, seen in a benchmark and not
+  reproduced. From squiz #899: a round on a loaded machine posts nothing,
+  because the state lock's 2-second wait is also spent on ps.
+expected_outcome: >
+  A bug that keeps the loaded-machine condition, gives the benchmark evidence
+  under Evidence rather than a Reproduce it does not have, says what is known
+  and not known about the cause, and states the spec's outcome: a late lock
+  with no other writer still records the spend and posts.
+prompt: |
+  Read AGENTS.md first.
+
+  SWE-drill's rebench of squiz 0.3.2 hit a failure on 7 of 324 trials, across
+  three runs. Each run had 20 trials going at once on a 20-vCPU Azure VM, with
+  the local venue, a Claude Sonnet 5.5 reviewer and a Copilot fixer. The tasks
+  were kestra-io__kestra-16450, ubugeeei-prod__vize-1265, floci-io__floci-1142,
+  sipeed__picoclaw-2928, pydantic__pydantic-ai-5580, apache__pulsar-25953 and
+  cloudflare__vinext-1837. Every other trial closed. In each of the 7, a round
+  whose reviewer finished posted nothing, and its `stopped.json` reads:
+
+  ```
+  {"stopped": "round failed", "reason": "nothing the reviewer found was posted: /<repo>/.squiz/local/state.json could not be written: its lock was taken only after the deadline had passed"}
+  ```
+
+  It has not been reproduced here. The trials' `.squiz/local/` and `host.log`
+  are in SWE-drill's blob storage, `sussae63383b/runs` under
+  `results/rebench/squiz-gpt-6.1-sol/20261115T11{4014,4339,4642}Z-1/`. Nobody
+  has read those `host.log` files yet, so whether another writer held the lock
+  is not known. It is P0: a user on a loaded machine gets no review.
+
+  File an issue for it.

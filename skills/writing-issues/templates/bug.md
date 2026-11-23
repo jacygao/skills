@@ -1,6 +1,6 @@
 ---
 name: Bug
-about: Something behaves differently from how it should
+about: Something behaves differently from how the spec or docs say it should
 title: ''
 labels: bug
 assignees: ''
@@ -8,25 +8,31 @@ assignees: ''
 
 ## What happens
 
-<!-- One sentence. The behaviour observed, not the diagnosis. -->
+<!-- What a user sees, in their words. Name the part at fault, as the spec or
+     docs define it. No file, line, issue number, diagnosis or fix. -->
 
 ## What should happen
 
-<!-- One sentence. -->
+<!-- The one outcome the spec or docs decide: a command, input or action and
+     what it produces. Name anything that must stay as it is. -->
 
 ## Reproduce
 
-<!-- The command and what it produced. A described failure goes stale; a
-     command does not. -->
+<!-- Commands and their output, nothing else. With no command, head this
+     section Evidence: where and when it was seen, and what that showed. -->
 
 ```
-<the command that reproduces it>
+<the command that reproduces it, and what it prints>
 ```
+
+## Cause
+
+<!-- Optional. The code locations, the diagnosis, and what is not yet known. -->
 
 ## Reference
 
-<!-- Whatever governs this and is worth reading first: a spec section, a design
-     doc, an RFC, a ticket, a URL. Delete the section if there is nothing. -->
+<!-- Optional. What governs this: a spec section, a doc, a linked issue.
+     "Found while ..." is the last bullet. -->
 
-<!-- A blocker is a relationship, not a line here: set it in the sidebar under
-     Relationships, or with gh issue edit --add-blocked-by. -->
+<!-- Priority is a label, not a line here. A blocker is a relationship: set it
+     in the sidebar under Relationships, or with gh issue edit --add-blocked-by. -->

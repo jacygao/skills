@@ -1,0 +1,6 @@
+You are also given the sources the issue was written from. Question: does the issue say a part is wrong, or ask for it to change, when by the sources that part already behaves as its definition says, and the issue does not say the definition itself is wrong and ask for it to change too?
+
+Where the sources disagree with themselves, a thing's definition (its usage
+line, the arguments it lists, its description or contract) outranks an example
+or a passing mention that contradicts it, and an example a definition outranks
+requires nothing.

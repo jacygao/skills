@@ -1,0 +1,7 @@
+sample	title-two-facts	opening-internal-first	opening-unexplained-term	alternatives-outside-options	offers-choice-spec-decides	settles-undecided	blames-conforming-part	contradicts-sources	vague-outcome	bundled-criterion	cause-in-what-happens	reproduce-not-runnable	repeats-a-fact	missing-part
+ref	P	P	P	P	P	?	?	P	P	P	P	P	P	P
+orig	F	F	P	P	P	?	?	P	P	P	P	F	?	P
+hedge	P	P	P	F	?	?	?	P	P	P	P	P	?	P
+noskill-1	?	?	?	?	?	?	?	?	?	P	?	P	?	?
+noskill-2	?	?	?	?	?	?	?	?	?	P	?	P	?	?
+noskill-3	?	?	?	?	?	?	?	?	F	?	?	P	?	P

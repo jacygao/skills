@@ -1,0 +1,6 @@
+sample	title-two-facts	opening-internal-first	opening-unexplained-term	alternatives-outside-options	offers-choice-spec-decides	settles-undecided	blames-conforming-part	contradicts-sources	vague-outcome	bundled-criterion	cause-in-what-happens	reproduce-not-runnable	repeats-a-fact	missing-part
+ref	P	P	P	P	P	P	P	P	P	P	?	P	P	P
+orig	F	F	F	F	F	P	?	F	F	P	P	F	?	P
+board-v1	F	P	P	P	F	P	?	F	F	P	P	P	?	P
+board-v7	P	P	P	P	P	P	F	F	P	P	P	P	?	P
+red-run	F	F	F	F	F	P	?	P	F	P	F	?	?	P

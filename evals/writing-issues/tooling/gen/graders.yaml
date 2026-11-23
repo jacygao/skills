@@ -1,0 +1,51 @@
+graders:
+  # The structural checks every writing-issues case gets. vally.py turns
+  # them into Vally graders; the quality checks are the questions in judges2/.
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?writing-issues"'
+  - name: labelled-with-a-kind
+    type: regex
+    pattern: '^Labels:[^\n]*\b(?:bug|task)\b'
+    flags: m
+    target: { source: file, path: issues/new.md }
+  - name: kind-matches-sections
+    type: regex
+    pattern: '^Labels:[^\n]*\bbug\b[\s\S]*^## What happens|^Labels:[^\n]*\btask\b[\s\S]*^## Purpose'
+    flags: m
+    target: { source: file, path: issues/new.md }
+  - name: headings-from-the-list
+    type: regex
+    pattern: '^## (?!(?:What happens|What should happen|Reproduce|Evidence|Cause|Options|Reference|Purpose|Context|Acceptance criteria)\s*$)'
+    match: not_contains
+    flags: m
+    target: { source: file, path: issues/new.md }
+  - name: has-the-kind-s-sections
+    type: regex
+    pattern: '^(?=[\s\S]*\n## What happens\s*\n)(?=[\s\S]*\n## What should happen\s*\n)(?=[\s\S]*\n## (?:Reproduce|Evidence)\s*\n)|^(?=[\s\S]*\n## Purpose\s*\n)(?=[\s\S]*\n## Acceptance criteria\s*\n)'
+    target: { source: file, path: issues/new.md }
+
+  # Bug: What happens, What should happen, Reproduce or Evidence, Cause,
+  # Options, Reference. Task: Purpose, Context, Options, Acceptance criteria,
+  # Reference. Any pair out of that order, or a bug's and a task's headings in
+  # one issue, fails.
+  - name: headings-in-order
+    type: regex
+    pattern: '## What should happen[\s\S]*## What happens|## (?:Reproduce|Evidence)[\s\S]*## What (?:should )?happen|## Cause[\s\S]*## (?:Reproduce|Evidence|What)|## Options[\s\S]*## (?:Cause|Reproduce|Evidence|What|Context|Purpose)|## Reference[\s\S]*\n## |## Acceptance criteria[\s\S]*## (?:Purpose|Context|Options)|## Context[\s\S]*## Purpose|## (?:What happens|What should happen|Reproduce|Evidence|Cause)[\s\S]*## (?:Purpose|Context|Acceptance criteria)|## (?:Purpose|Context|Acceptance criteria)[\s\S]*## (?:What happens|What should happen|Reproduce|Evidence|Cause)'
+    match: not_contains
+    target: { source: file, path: issues/new.md }
+
+  # The priority label carries it. The body starts after the Labels line, so a
+  # blank line between the title and the labels does not make them body.
+  - name: no-priority-in-body
+    type: regex
+    pattern: '^Labels:[^\n]*\n[\s\S]*?(?:\bP[0-2]\b|[Pp]riority)'
+    match: not_contains
+    flags: m
+    target: { source: file, path: issues/new.md }
+  - name: acceptance-criteria-are-checkboxes
+    type: regex
+    pattern: '## Acceptance criteria[^\n]*(?:\n(?!## )[^\n]*)*?\n(?!- \[ \]|[ \t]|## )\S'
+    match: not_contains
+    target: { source: file, path: issues/new.md }

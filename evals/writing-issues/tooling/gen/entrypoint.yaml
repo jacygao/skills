@@ -1,0 +1,37 @@
+# The case. It starts from ../../entrypoint/workspace/.
+description: >
+  A bug in images the project does not own, with its evidence from runs seen
+  elsewhere and a fix with a known limit. From swe-drill #302: 15 atlas-rf task
+  images set ENTRYPOINT ["/bin/bash"], so their containers exit before the
+  agent starts.
+expected_outcome: >
+  A bug saying 15 atlas-rf tasks never start on Docker, that every task should
+  start once each of the 15 copies clears the image's entrypoint, with the
+  failed batch as Evidence rather than a Reproduce, and the diagnosis and the
+  unchecked Modal case kept out of What happens.
+prompt: |
+  Read AGENTS.md first.
+
+  15 of atlas-rf's 70 task images set `ENTRYPOINT ["/bin/bash"]`. Harbor's
+  Docker environment starts a prebuilt image with
+  `command: ["sh", "-c", "sleep infinity"]` and keeps the image's entrypoint,
+  so the container runs `/bin/bash sh -c "sleep infinity"` and exits 126
+  before the agent starts. Keeping the entrypoint is right for Harbor, since
+  other datasets' images rely on theirs.
+
+  The 15, from each image's config in the registry: all 12 C and C++ tasks
+  (MariaDB server, Suricata, netdata) and 3 TypeScript tasks (renovate):
+  `task-69b7c2a04b6f8ff9ed98812c`, `812d`, `812e`, `812f`, `8131`, `8134`,
+  `8137`, `813a`, `813b`, `813d`, and `task-69d196f015a150488265afc0` to
+  `afc4`. The other 55 set no entrypoint, or one that runs its arguments.
+
+  In the ten-task batch under `checks/atlas-rf-batch/copilot-gpt-6.1-sol/` in
+  storage, `task-69b7c2a04b6f8ff9ed98812c`, `…8131` (job `batch-ea`) and
+  `…812f` (job `batch-je`) failed with `container …-main-1 exited (126)`. The
+  other 7 graded cleanly.
+
+  A copy can add an `environment/docker-compose.yaml` with
+  `services: main: entrypoint: []`, which clears it. Nobody has checked
+  whether the 15 start on Modal with that file.
+
+  File an issue for it.

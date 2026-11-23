@@ -1,0 +1,1 @@
+Question: does any single item under "Acceptance criteria", or a heading meaning the same such as "Done when", hold two or more checks that could pass or fail independently of each other? One property stated of a list of things, and one command the project runs as its check, are each one check. An issue with no such section answers no.

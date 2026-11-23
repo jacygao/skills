@@ -1,0 +1,19 @@
+# The case. It starts from ../../status-hint/workspace/.
+description: >
+  A bug whose broken part has to be found in the spec. From squiz #909:
+  squiz review's hint names `squiz status 41`, and the spec's squiz status
+  takes no number. As filed, it offered "drop the number" or "add a number to
+  squiz status", and read as if squiz status were broken.
+expected_outcome: >
+  A short bug saying squiz review's hint names a number squiz status does not
+  take, and that the hint should name `squiz status` alone, as the spec does.
+prompt: |
+  Read AGENTS.md first.
+
+  While checking the contradictions in #908 against the code, you found this:
+  when the round host's start cannot be told, `squiz review` prints
+  ``squiz: `squiz status 41` shows whether one takes it later``. `squiz status`
+  ignores every argument and lists every review in the worktree. It is P2,
+  because the command still shows the review, among the others.
+
+  File an issue for it.

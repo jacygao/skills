@@ -1,0 +1,86 @@
+# Expected: The reason for a signed-out Copilot reviewer says it is not signed in and names no model, stated in one place with one example; a pane round's reason carries what the reviewer said. No version numbers or code fields.
+name: writing-specs-copilot-signed-out
+description: "A fix that changes a message states the new message, not the CLI version it was seen on or how the adapter recognises it. From squiz #856, which added \"Copilot 1.0.109 prints that line\", stderr plumbing and a new adapter field."
+defaults:
+  runs: 3
+  timeout: 10m
+  judge_timeout: 5m
+  executor: copilot-sdk
+  model: claude-opus-5.5
+scoring:
+  threshold: 0.8
+  weights:
+    skill-invocation: 0
+    file-matches: 1
+agent_environment:
+  skills: [../../../skills/writing-specs]
+  files: [{ src: workspace, dest: . }]
+stimuli:
+  - name: copilot-signed-out
+    prompt: |
+      Read AGENTS.md first.
+
+      You have fixed issue #849 on this branch, and the code and tests are done:
+
+      - A signed-out Copilot reviewer was reported as "completed no message" with
+        the hint that the default model may be wrong, in the terminal and in the
+        failure comment. It now says the reviewer is not signed in, and names no
+        model.
+      - The Copilot script keeps Copilot's stderr in `stderr.txt` in the session
+        directory, then writes it to its own stderr and exits with Copilot's
+        status. A round in a pane used to read nothing of what Copilot said; it
+        now reads this file.
+      - Adapters can take two new optional fields. `stderrFile` names the file the
+        round reads for a reviewer in a pane. `diagnose` turns what a run with no
+        messages said into a reason, and a diagnosed reason gets no model hint.
+      - The Copilot adapter diagnoses a stderr line of exactly `Error: No
+        authentication information found.` as:
+
+        ```
+        the reviewer is not signed in to Copilot: it said "Error: No authentication information found."
+        ```
+
+        That text was seen on Copilot CLI 1.0.109, which exits 1 before any
+        request when it finds no login.
+      - A pane run that the adapter does not diagnose now carries what it said,
+        `…, and said: …`, ahead of the model hint, as a detached run already did.
+
+      Update docs/specs/review-harness-spec.md for this change. GitHub isn't
+      reachable, so edit the files in place and don't commit.
+    graders:
+      - name: skill-loaded
+        type: skill-invocation
+        config: { required: [writing-specs] }
+      # Requirements the fixture already holds, near the edit, must survive it.
+      - name: keeps-the-requirements-around-it
+        type: file-matches
+        config: { path: docs/specs/review-harness-spec.md, pattern: "^(?=[\\s\\S]*argv\\(opts\\))(?=[\\s\\S]*confine\\(opts\\))(?=[\\s\\S]*read\\(reports\\))(?=[\\s\\S]*is\\s+not\\s+a\\s+model\\s+pi\\s+offers)(?=[\\s\\S]*\"gpt-5-nano\",\\s+which\\s+the\\s+reviewer)(?=[\\s\\S]*totalNanoAiu)(?=[\\s\\S]*\\|\\s*No\\s+finish,\\s+and\\s+no\\s+usage\\s+line)(?=[\\s\\S]*records\\s+a\\s+cost\\s+only\\s+where\\s+Copilot\\s+ended\\s+by\\s+itself)", negate: false }
+      # The fixture says "no model" three times. Pasting the example alone adds
+      # none; stating that a signed-out reason names no model adds one.
+      - name: signed-out-names-no-model
+        type: file-matches
+        config: { path: docs/specs/review-harness-spec.md, pattern: "(?:no\\s+model[\\s\\S]*?){4}", negate: false }
+      # The sentence that limited this to a detached run is rewritten.
+      - name: pane-runs-carry-stderr-too
+        type: file-matches
+        config: { path: docs/specs/review-harness-spec.md, pattern: "Detached,\\s+the\\s+round\\s+adds\\s+the\\s+run.s\\s+stderr", negate: true }
+      # Deleting the detached-only sentence is not enough: a sentence says a pane
+      # run's reason carries what the reviewer said too.
+      - name: pane-runs-are-stated
+        type: file-matches
+        config: { path: docs/specs/review-harness-spec.md, pattern: "(?:stderr|said|wrote)[^.|]{0,200}(?:\\.[^.|]{0,200})?\\bpane|\\bpane[^.|]{0,200}(?:\\.[^.|]{0,200})?(?:stderr|said|wrote)", negate: false }
+      - name: states-not-signed-in
+        type: file-matches
+        config: { path: docs/specs/review-harness-spec.md, pattern: "not signed in", negate: false }
+      # The fixture's spec is 315 lines.
+      - name: grows-at-most-10-lines
+        type: file-matches
+        config: { path: docs/specs/review-harness-spec.md, pattern: "(?:[^\\n]*\\n){326}", negate: true }
+      - name: no-version-or-plumbing
+        type: file-matches
+        config: { path: docs/specs/review-harness-spec.md, pattern: "1\\.0\\.109|[Tt]ested on|[Ss]een on|stderrFile|`diagnose`|stderr\\.txt", negate: true }
+      # An LLM judge passed these edits when run by hand and failed them in the
+      # harness, so the one check only it made is a count here.
+      - name: one-example-of-the-reason
+        type: file-matches
+        config: { path: docs/specs/review-harness-spec.md, pattern: "not signed in to Copilot: it said", negate: false }
