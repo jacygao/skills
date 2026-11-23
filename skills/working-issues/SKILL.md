@@ -169,9 +169,15 @@ Every brief carries:
   the brief names no path, and it works there and never leaves
 - **Where `AGENTS.md` names an automated reviewer, work its review to the end**
   once the pull request is open, by the command `AGENTS.md` gives
+- **Judge the change's size before opening the pull request.** Once the change
+  has taken shape, judge whether one reviewer could hold it in mind and check
+  it, weighing what `triaging-issues` § 5 weighs. If not, stop before
+  `gh pr create` and report a proposed split: the seams, and which part lands
+  first. Work grows past its triage: squiz's #803 was already a sub-issue, and
+  its pull request added 1,036 lines across 14 files
 - Report back: the pull request number, the checks it ran with their output,
-  each new test's failure as it first ran, what it filed, and **what it could
-  not determine**
+  each new test's failure as it first ran, what it filed, any proposed split,
+  and **what it could not determine**
 
 **An agent that reports what it could not determine has done its job.** That
 answer is yours to resolve, not theirs to guess:
@@ -250,6 +256,11 @@ answer rather than the question.
 measurement.** Which frontier issues go out together, how the briefs are
 written, which tests to run, whether a finding is fixed here or filed as its
 own issue.
+
+**Act on a proposed split.** File the parts as sub-issues through
+`triaging-issues` § 5, and dispatch the part the subagent said lands first. Or
+let the pull request go ahead, and say in your report why one review can still
+check it.
 
 **Ask anything that trades cost against product.** A new runtime dependency. A
 default users see. What a user-facing string says. Whether a milestone's scope

@@ -106,6 +106,18 @@ One subtask is **one isolated, complete purpose**:
 - **`main` stays releasable** after it merges
 - **Describable in one sentence with no "and".** If the sentence needs an "and",
   it is two subtasks
+- **One reviewer can check all of it.** Picture the finished change and judge
+  whether one reader could hold it in mind and check every part. Weigh
+  behaviours that could ship separately, a second area of the code a reviewer
+  must understand to judge the first, and a part that is useful on its own
+
+The first three ask whether a part merges safely. The last asks whether its
+review can catch what is wrong, and it is a judgement, not a size. Squiz's #803,
+"deliver each round's result through the handoff instead of the wake, under the
+round cap, and mark the episode done when it closes", passed triage as one
+sub-issue because each part was green on its own. It became a 1,036-line pull
+request whose one review had to judge a new delivery path, a cap and a close
+marker at once, and four defects in it reached `main` with no thread on them.
 
 Split at a seam, not at a line count: a directory with its own reason to change,
 a pure transform under an I/O wrapper, a decision one part makes and the next
