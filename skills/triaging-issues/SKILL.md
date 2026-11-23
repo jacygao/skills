@@ -50,8 +50,7 @@ gh issue list --state open --limit 500 --json number,title,labels,milestone \
 Read each body and its last comments, not just the title. A title says what was
 seen; the body and comments say what it costs and what has changed since.
 
-Read issues with `--json` throughout, never the rendered text output. That
-output is laid out for a person reading a terminal, and its shape is not a
+Read issues with `--json`, never the rendered text, whose layout is not a
 contract.
 
 ## 3. Propose
@@ -106,18 +105,6 @@ One subtask is **one isolated, complete purpose**:
 - **`main` stays releasable** after it merges
 - **Describable in one sentence with no "and".** If the sentence needs an "and",
   it is two subtasks
-- **One reviewer can check all of it.** Picture the finished change and judge
-  whether one reader could hold it in mind and check every part. Weigh
-  behaviours that could ship separately, a second area of the code a reviewer
-  must understand to judge the first, and a part that is useful on its own
-
-The first three ask whether a part merges safely. The last asks whether its
-review can catch what is wrong, and it is a judgement, not a size. Squiz's #803,
-"deliver each round's result through the handoff instead of the wake, under the
-round cap, and mark the episode done when it closes", passed triage as one
-sub-issue because each part was green on its own. It became a 1,036-line pull
-request whose one review had to judge a new delivery path, a cap and a close
-marker at once, and four defects in it reached `main` with no thread on them.
 
 Split at a seam, not at a line count: a directory with its own reason to change,
 a pure transform under an I/O wrapper, a decision one part makes and the next
@@ -143,31 +130,21 @@ file, say so in both issues, because the second to merge needs a rebase.
 gh issue edit 45 --add-blocked-by 43 --add-blocked-by 44
 ```
 
-Verify: a sub-issue that failed to attach, or a blocker that failed to post,
-looks exactly like one that was never set.
-
-```bash
-gh issue view 42 --json subIssuesSummary --jq '.subIssuesSummary.total'
-gh issue list --milestone 0.1.0 --state open --limit 200 \
-  --json number,title,blockedBy \
-  --jq '.[] | "#\(.number) \(.title) — blocked by \(.blockedBy.totalCount)"'
-```
-
 ## 6. Present and stop
 
-Print each release's issues with their priority, sub-issues and blockers, and
-the frontier: the issues with no open blocker and no sub-issues.
+Print each release's issues with their priority, sub-issues and open blockers.
+The listing is also the check on § 5: a sub-issue that failed to attach, or a
+blocker that failed to post, looks exactly like one that was never set.
 
 ```bash
 gh issue list --milestone 0.1.0 --state open --limit 200 \
-  --json number,title,blockedBy,subIssuesSummary \
-  --jq '.[] | select(.subIssuesSummary.total == 0)
-        | select([.blockedBy.nodes[] | select(.state == "OPEN")] | length == 0)
-        | "#\(.number) \(.title)"'
+  --json number,title,labels,blockedBy,subIssuesSummary \
+  --jq '.[] | "#\(.number)  \([.labels[].name | select(test("^P[012]$"))] | join(","))  sub-issues \(.subIssuesSummary.total)  open blockers \([.blockedBy.nodes[] | select(.state == "OPEN")] | length)  \(.title)"'
 ```
 
-Do not store the frontier in an issue. Readiness is true at the moment it is
-computed and wrong after the next merge.
+Name the frontier, the issues with no open blocker and no sub-issues, as
+`working-issues` § 1 reads it. Do not store it in an issue: readiness is true at
+the moment it is computed and wrong after the next merge.
 
 Then stop. Do not begin implementation; that is the `working-issues` skill, and
 the caller starts it.

@@ -169,9 +169,11 @@ Every brief carries:
   the brief names no path, and it works there and never leaves
 - **Where `AGENTS.md` names an automated reviewer, work its review to the end**
   once the pull request is open, by the command `AGENTS.md` gives
-- **Judge the change's size before opening the pull request.** Once the change
-  has taken shape, judge whether one reviewer could hold it in mind and check
-  it, weighing what `triaging-issues` § 5 weighs. If not, stop before
+- **Judge the change's size before opening the pull request.** It is a
+  judgement, not a line count. Once the change has taken shape, weigh
+  behaviours that could ship separately, a second area of the code a reviewer
+  must understand to judge the first, and a part useful on its own. Where one
+  reviewer could not hold the change in mind and check it, stop before
   `gh pr create` and report a proposed split: the seams, and which part lands
   first. Work grows past its triage: squiz's #803 was already a sub-issue, and
   its pull request added 1,036 lines across 14 files
