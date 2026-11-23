@@ -15,8 +15,7 @@ scoring:
     panel: 0.333333
 agent_environment:
   skills: [../../../skills/writing-rules]
-  files: [{ src: fixture.sh, dest: fixture.sh }]
-  commands: ['f=$(mktemp) && mv fixture.sh "$f" && bash "$f" && rm -f "$f"']
+  files: [{ src: workspace, dest: . }]
 stimuli:
   - name: agents-md-pointer
     prompt: |

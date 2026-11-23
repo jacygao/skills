@@ -1,4 +1,4 @@
-# The case. Its fixture is ../../reviewer-policy/fixture.sh.
+# The case. It starts from ../../reviewer-policy/workspace/.
 description: >
   A choice the spec does not make, which has to be filed as a decision rather
   than a bug or a settled task. From squiz #763: how the reviewer reports a

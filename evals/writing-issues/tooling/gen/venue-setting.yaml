@@ -1,4 +1,4 @@
-# The case. Its fixture is ../../venue-setting/fixture.sh.
+# The case. It starts from ../../venue-setting/workspace/.
 description: >
   A task with several acceptance criteria, each to be one testable check. From
   squiz #838: choose the venue with a setting in .squiz.json, in place of the

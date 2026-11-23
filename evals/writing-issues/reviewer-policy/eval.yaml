@@ -14,8 +14,8 @@ scoring:
     panel: 0.65
 agent_environment:
   skills: [../../../skills/writing-issues]
-  files: [{ src: fixture.sh, dest: fixture.sh }]
-  commands: ['f=$(mktemp) && mv fixture.sh "$f" && bash "$f" && rm -f "$f"']
+  files: [{ src: workspace, dest: . }]
+  commands: ['git init -q -b main && git add -A && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m "Initial commit"']
 stimuli:
   - name: reviewer-policy
     prompt: |

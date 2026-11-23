@@ -1,4 +1,4 @@
-# The case. Its fixture is ../../entrypoint/fixture.sh.
+# The case. It starts from ../../entrypoint/workspace/.
 description: >
   A bug in images the project does not own, with its evidence from runs seen
   elsewhere and a fix with a known limit. From swe-drill #302: 15 atlas-rf task

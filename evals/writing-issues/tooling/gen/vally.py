@@ -54,9 +54,8 @@ for case in cases:
            # replace the skills: a stimulus's environment wins over a variant's.
            'agent_environment:',
            '  skills: [../../../skills/writing-issues]',
-           '  files: [{ src: fixture.sh, dest: fixture.sh }]',
-           # The fixture commits its directory, so it must not be in it.
-           '  commands: [\'f=$(mktemp) && mv fixture.sh "$f" && bash "$f" && rm -f "$f"\']',
+           '  files: [{ src: workspace, dest: . }]',
+           '  commands: [\'git init -q -b main && git add -A && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m "Initial commit"\']',
            'stimuli:', f'  - name: {case}', f'    prompt: {block_scalar(prompt, 6)}',
            '    graders:']
     for name, typ in graders:

@@ -1,4 +1,4 @@
-# The case. Its fixture is ../../token-in-shell/fixture.sh.
+# The case. It starts from ../../token-in-shell/workspace/.
 description: >
   A security bug where the spec itself states the faulty behavior, so the fix
   changes the spec as well as the code. From swe-drill #296: the coding agent's

@@ -1,4 +1,4 @@
-# The case. Its fixture is ../../status-hint/fixture.sh.
+# The case. It starts from ../../status-hint/workspace/.
 description: >
   A bug whose broken part has to be found in the spec. From squiz #909:
   squiz review's hint names `squiz status 41`, and the spec's squiz status

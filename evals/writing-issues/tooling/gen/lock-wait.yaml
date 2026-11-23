@@ -1,4 +1,4 @@
-# The case. Its fixture is ../../lock-wait/fixture.sh.
+# The case. It starts from ../../lock-wait/workspace/.
 description: >
   A bug that only happens under a condition, seen in a benchmark and not
   reproduced. From squiz #899: a round on a loaded machine posts nothing,

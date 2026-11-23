@@ -14,8 +14,7 @@ scoring:
     file-matches: 1
 agent_environment:
   skills: [../../../skills/writing-specs]
-  files: [{ src: fixture.sh, dest: fixture.sh }]
-  commands: ['f=$(mktemp) && mv fixture.sh "$f" && bash "$f" && rm -f "$f"']
+  files: [{ src: workspace, dest: . }]
 stimuli:
   - name: version-command
     prompt: |
