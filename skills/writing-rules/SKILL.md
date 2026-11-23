@@ -29,6 +29,10 @@ That's it. Most rules are one line.
 - **Cache only what looking cannot find.** An agent reads the code, the config
   and every file you point it at. Write the unwritten choice, the trap and the
   convention, and point at the rest.
+- **Scope the rule to where the code follows it.** Check every "each", "all"
+  and "every" against the code. A convention for how something is written,
+  where some files go without it, says how to write it, not that it is
+  required.
 - **Leave the request's explanation in the request.** What the person
   explained to you, the reader sees in the files themselves. Write what the
   reader does with them.
