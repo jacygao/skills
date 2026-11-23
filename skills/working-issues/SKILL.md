@@ -159,8 +159,9 @@ Every brief carries:
 - **The specific silent failures.** Mostly these are places where a broken
   thing and a correct thing produce the same output. `AGENTS.md` lists the
   project's; name what tells the two apart
-- **Load `writing-tests` before writing any test.** Test first, seen failing
-  for the reason it names, against the unit as a black box
+- **Load `writing-tests` before writing any test.** Red, green, refactor: the
+  test first, seen failing for the reason it names, then the code, then any
+  refactor with the tests kept green. The unit is tested as a black box
 - What to prove rather than assume, and to file a `needs-human` issue instead of
   shipping something it could not verify
 - **The pull request body ends at its last real section.** No generated-with
