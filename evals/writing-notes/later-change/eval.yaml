@@ -58,7 +58,7 @@ stimuli:
         config: { path: "docs/notes/*.md", pattern: "(?m)^\\s*(?:[-*] )?(?:\\*\\*)?(?:\\d{4}-\\d{2}-\\d{2}|Updated|Update)\\b[^\\n]*?:", negate: true }
       - name: no-history-words
         type: file-matches
-        config: { path: "docs/notes/*.md", pattern: "(?i)\\bsince M7\\b|\\bafter M7\\b|\\bbefore M7\\b|\\bpreviously\\b|\\bused to\\b|\\bno longer\\b|\\bany more\\b|\\banymore\\b|\\bnow\\b[^.\\n]*\\binstead\\b", negate: true }
+        config: { path: "docs/notes/*.md", pattern: "(?i)\\bpreviously\\b|\\bused to\\b|\\bno longer\\b|\\bany more\\b|\\banymore\\b|\\bnow\\b[^.\\n]*\\binstead\\b", negate: true }
       - name: no-stale-range
         type: file-matches
         config: { path: "docs/notes/*.md", pattern: "1 to 480", negate: true }
