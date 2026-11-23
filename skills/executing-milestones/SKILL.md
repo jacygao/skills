@@ -88,7 +88,8 @@ gh api "repos/{owner}/{repo}/issues/$epic/sub_issues" --paginate \
 
 A number here that the frontier did not list is a sub-issue the listing cannot
 yet see. Read those with `gh issue view <n> --json blockedBy,subIssuesSummary`
-rather than waiting for the index, and pass over one with sub-issues.
+rather than waiting for the index. One with sub-issues is a split issue: run the
+same `sub_issues` call on it, down to the issues with none, and take those.
 
 ## 2. Hand the ready issues to working-issues
 
