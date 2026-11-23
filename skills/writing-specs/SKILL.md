@@ -36,15 +36,16 @@ and concretely serves both.
 A sentence belongs in the spec only if it states a requirement: something a
 user, a caller or another program can observe, where two correct
 implementations could not differ. Commands, flags a person types, settings and
-their defaults, exit statuses, files a person reads, formats, messages and
-bounds.
+their defaults, exit statuses, files a person reads, formats, messages, and the
+bounds a person sets or waits on.
 
 Ask who would see it. If only the program's own parts would, such as another
 module, an adapter's interface, a script's steps, or a file or field only the
 program reads, it is how the code works. So is a threshold or interval the code
-picked to detect something, which no person sets, and so is the condition the
-code tests. State when a behaviour applies in terms the user knows, such as
-"after a push", not as the comparison that detects it.
+picked to detect something, which no person sets, a time limit on work nobody
+waits for, and the condition the code tests. State when a behaviour applies in
+terms the user knows, such as "after a push", not as the comparison that
+detects it.
 
 Everything else is true and worth keeping, and it has a home that is not the
 spec:
@@ -67,6 +68,26 @@ A change description, an issue or a pull request is the brief the code was
 built from. The spec takes the requirements out of it and leaves the rest.
 Most of a good brief does not belong in the spec.
 
+**Write from what a user sees, not from the brief.** Before writing, list what
+a user would see change: a message, an exit status, a file, a setting, a bound
+they wait on. Write the spec text from that list, then check the list against
+the brief. A brief with a bullet per case does not make a spec with a sentence
+per case; a bullet that adds nothing to the list stays out, however true. Every
+item on the list is stated, each failure's exit status and message included:
+a spec short of a requirement is as wrong as one that holds the code. A case
+the brief says behaves as an existing rule does is already stated. Where
+the product fails safe, leaving a thing as it was or trying again later, say
+nothing about it unless a user would act on it.
+
+> Not this: "After an install, the CLI lists its cache, reads each entry's
+> lockfile, and deletes entries unused for 30 days. It spends at most 5 seconds
+> on this, and an entry it cannot read is kept for the next install."
+>
+> This: "After an install, the CLI deletes cache entries unused for 30 days."
+
+The same holds where the change only states what the code already does. The
+code is in front of you then, and it is the change most likely to copy it.
+
 **The existing text is not the model for what to add.** A section that already
 holds argv, internal fields or a log line for every case is not permission to
 add more of them. State the new requirement at the level this skill sets, and
@@ -88,14 +109,18 @@ For every edit:
    rewrites the sentence that states it, and adds nothing about the case it
    fixed.
 3. **State each requirement once.** Another section that needs it cites it by
-   number, and a row in a table of failures names the outcome and cites where
-   it is stated rather than restating it.
+   number instead of saying it again: "exits 1, as § 7 sets out" restates the
+   rule beside its citation. A row in a table of failures names the outcome and
+   cites where it is stated rather than restating it.
 4. **Check the size before you finish.** Diff the spec and read every added
-   line. For each, ask what a user would see differently if it were false. A
-   line with no answer goes. A bug fix adds a clause or nothing, and a feature
-   adds a few lines per requirement.
-5. **Say in the reply** how many lines the spec grew by, and which requirement
-   each addition states.
+   sentence as a user. For each, name what that user would see differently if
+   it were false, and the one place it is stated. A sentence with no answer
+   goes, and so does one that says again what another place already says, a
+   glossary row or another section included. A bug fix adds a clause or
+   nothing, and a feature adds a few lines per requirement.
+5. **Say in the reply** how many lines the spec grew by, and for each added
+   sentence what a user sees. Write this before you finish, not after: the
+   sentences you cannot name it for are the ones to delete.
 
 ## Principles
 
