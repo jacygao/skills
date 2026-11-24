@@ -1,16 +1,21 @@
 # Skills
 
-Claude Code skills for building software with coding agents, as one plugin. A
-project enables it in its own settings, and every skill is named
-`skills:<name>`, such as `skills:working-issues`, wherever it sits in this
-repository.
+Claude Code skills for building software with coding agents, shipped as one
+plugin. Each skill is named `skills:<name>`, such as `skills:working-issues`.
 
-| Skill | For |
-|---|---|
-| `writing-issues`, `writing-pull-requests`, `writing-specs`, `writing-notes`, `writing-rules`, `writing-tests` | Every project |
-| `working-issues` | Every project: issues worked through subagents, worktrees and verification |
-| `planning-milestones`, `executing-milestones` | A project built from nothing, milestone by milestone, from `docs/specs/milestones.md` |
-| `triaging-issues`, `cutting-releases` | A project that has shipped, planned release by release in GitHub milestones |
+| Skill | What it does | For | Eval, with skill vs without | |
+|---|---|---|---|---|
+| `writing-issues` | Writes a GitHub issue | Every project | 92% vs 64% | [README](skills/writing-issues/README.md) |
+| `writing-pull-requests` | Writes a pull request body and keeps it true | Every project | 87% vs 74% | [README](skills/writing-pull-requests/README.md) |
+| `writing-specs` | Writes and edits a specification | Every project | 99% vs 61% | [README](skills/writing-specs/README.md) |
+| `writing-notes` | Records a finding in `docs/notes/` | Every project | 100% vs 35% | [README](skills/writing-notes/README.md) |
+| `writing-rules` | Writes `AGENTS.md`, `CLAUDE.md` and rule files | Every project | 85% vs 77% | [README](skills/writing-rules/README.md) |
+| `writing-tests` | Writes a test, test first | Every project | 99% vs 63% | [README](skills/writing-tests/README.md) |
+| `working-issues` | Works issues through subagents into verified pull requests | Every project | 75% vs 60% | [README](skills/working-issues/README.md) |
+| `planning-milestones` | Turns a planned milestone into an issue tree | Built from `docs/specs/milestones.md` | 100% vs 50% | [README](skills/planning-milestones/README.md) |
+| `executing-milestones` | Finds a milestone's ready issues and works them | Built from `docs/specs/milestones.md` | No eval yet | [README](skills/executing-milestones/README.md) |
+| `triaging-issues` | Prioritises issues and plans a release | Shipped, with GitHub milestones | 79% vs 93% | [README](skills/triaging-issues/README.md) |
+| `cutting-releases` | Bumps, tags and publishes a release | Shipped, with GitHub milestones | No eval yet | [README](skills/cutting-releases/README.md) |
 
 ## Use it in a project
 
@@ -29,26 +34,30 @@ Check this into the project's `.claude/settings.json`:
 }
 ```
 
-The project's `AGENTS.md` names the skills it uses and when to load each one.
+## What to add to the project's AGENTS.md
 
-## What a project's AGENTS.md provides
+The skills hold the method; `AGENTS.md` holds what is specific to the project.
+Each skill's README gives the lines it needs, under these headings:
 
-The skills hold the method. What is specific to a project lives in its
-`AGENTS.md`, and the skills read it from there:
-
-- **When to load each skill**, such as `writing-specs` before editing
-  `docs/specs/`
-- **Its checks**, by the command that runs them
-- **Its specification**, and the part of it that fixes the language rules and the
-  source layout
-- **The silent failures** it is prone to, so a brief can name them
-- **An automated reviewer**, where one runs on pull requests, and the command
-  that reads its review
-- **Standing rules** for running agents in it
-- **Issue conventions**: what every issue must carry, such as a priority and a
-  milestone, and what each priority means
-- **Releases**: the files that carry the version, and whether a specification's
-  version moves with a release
+| Heading | What goes in it | Read by |
+|---|---|---|
+| Skills | When to load each skill | Every skill |
+| Checks | The command that runs the checks | `working-issues`, `planning-milestones` |
+| Specification | The main spec, and the sections fixing language rules and source layout | `working-issues`, `planning-milestones`, `writing-specs`, `writing-notes` |
+| Silent failures | Where a broken thing and a correct thing look the same | `working-issues` |
+| Reviewer | 75% vs 60% | `working-issues` |
+| Running agents | Standing rules for agents in this project | `working-issues` |
+| Issues | 75% vs 60% | `writing-issues`, `triaging-issues` |
+| Releases | The files that carry the version | `cutting-releases` |
 
 Rules files and `CLAUDE.md` content cannot ship in a plugin, so a project keeps
-its `.claude/rules/` itself.
+its `.claude/rules/` itself. Load `writing-rules` before editing any of them.
+
+## Evals
+
+Each skill with an eval has its cases in `evals/<skill>/`. The score is the
+mean grade across every case and trial, with the skill and with no skill:
+
+```bash
+cd evals/<skill> && vally experiment run skill.experiment.yaml
+```
