@@ -16,6 +16,10 @@ Its description loads it before cutting a release.
 
 - Load `cutting-releases` before cutting a release.
 
+## Checks
+
+- <the command that runs the checks, such as `npm run check`>
+
 ## Releases
 
 - The version is in `package.json`, `package-lock.json` and

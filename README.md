@@ -42,7 +42,7 @@ Each skill's README gives the lines it needs, under these headings:
 | Heading | What goes in it | Read by |
 |---|---|---|
 | Skills | When to load each skill | Every skill |
-| Checks | The command that runs the checks | `working-issues`, `planning-milestones` |
+| Checks | The command that runs the checks | `working-issues`, `planning-milestones`, `cutting-releases` |
 | Specification | The main spec, and the sections fixing language rules and source layout | `working-issues`, `planning-milestones`, `writing-specs`, `writing-notes` |
 | Silent failures | Where a broken thing and a correct thing look the same | `working-issues` |
 | Reviewer | The automated reviewer on pull requests, and the command that reads its review | `working-issues` |
