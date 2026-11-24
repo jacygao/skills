@@ -68,10 +68,10 @@ stimuli:
         config: { path: pr/251.md, pattern: "(?m)^## What changed\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## Intent\\s*$|^## Risks\\s*$[\\s\\S]*^## Intent\\s*$|^## Verification\\s*$[\\s\\S]*^## Intent\\s*$|^## Notes\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What changed\\s*$|^## Verification\\s*$[\\s\\S]*^## What changed\\s*$|^## Notes\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## What did not change\\s*$|^## Notes\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Verification\\s*$", negate: true }
       - name: closes-in-intent
         type: file-matches
-        config: { path: pr/251.md, pattern: "(?m)^## (?!Intent\\s*$)[^\\n]*\\n(?:(?!## )[^\\n]*\\n)*?[^\\n]*\\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\\d", negate: true }
+        config: { path: pr/251.md, pattern: "(?m)(?:(?<![\\s\\S])|^## (?!Intent\\s*$)[^\\n]*\\n)(?:(?!## )[^\\n]*\\n)*?[^\\n]*\\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\\d", negate: true }
       - name: no-table
         type: file-matches
-        config: { path: pr/251.md, pattern: "(?m)^\\|[^\\n]*\\|[ \\t]*\\n\\|[ \\t:|-]*-{3,}", negate: true }
+        config: { path: pr/251.md, pattern: "(?m)^ {0,3}[^\\n]*\\|[^\\n]*\\n {0,3}(?=[^\\n]*\\|)\\|?[ \\t]*:?-+:?[ \\t]*(?:\\|[ \\t]*:?-+:?[ \\t]*)*\\|?[ \\t]*$", negate: true }
       - name: judges
         type: panel
         config:
@@ -132,7 +132,7 @@ stimuli:
 
             ```diff
             diff --git a/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md b/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md
-            index a1b41ed..a4ca14c 100644
+            index a1b41ed..7d3bb42 100644
             --- a/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md
             +++ b/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md
             @@ -1,8 +1,8 @@
@@ -147,18 +147,19 @@ stimuli:
              recheck-when: Claude Code changes how a plugin's bin/ reaches PATH
              ---
              
-            @@ -25,6 +25,10 @@ exited 0.
+            @@ -25,6 +25,11 @@ exited 0.
                nothing to say.** Both leave an empty transcript. Nothing about the plugin
                loading says the command will run, so the two are told apart by the exit code
                in the event stream rather than by output.
-            +- **The commands § 6 has the coding agent run by name need nothing for an
-            +  install.** An install puts the plugin's `bin/` on the Bash tool's `PATH` as
-            +  `--plugin-dir` does, so `squiz threads`, `squiz reply` and `squiz resolve`
-            +  resolve under both.
+            +- **The name the coding agent runs resolves under an install as it does under
+            +  `--plugin-dir`.** An install puts the plugin's `bin/` on the Bash tool's `PATH`,
+            +  so `squiz threads` and `squiz reply` find the binary either way. What was
+            +  established is the lookup of `squiz` itself; which commands it dispatches is its
+            +  own question and nothing here measures it.
              
              ## Needs your input
              
-            @@ -70,16 +74,60 @@ exist produce the same nothing in a transcript. Two flags separate them:
+            @@ -70,16 +75,60 @@ exist produce the same nothing in a transcript. Two flags separate them:
                logs the hook's error line. A plugin that failed to load is told apart from a
                hook that never fired here.
              
@@ -227,26 +228,6 @@ stimuli:
             -  `claude-sonnet-5`.** Three runs on macOS.
             +- **One machine, print mode, one subagent per run, `claude-sonnet-5`.** Three
             +  runs on macOS for the `--plugin-dir` findings and one for the install.
-            diff --git a/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md b/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md
-            index a4ca14c..7d3bb42 100644
-            --- a/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md
-            +++ b/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md
-            @@ -25,10 +25,11 @@ exited 0.
-               nothing to say.** Both leave an empty transcript. Nothing about the plugin
-               loading says the command will run, so the two are told apart by the exit code
-               in the event stream rather than by output.
-            -- **The commands § 6 has the coding agent run by name need nothing for an
-            -  install.** An install puts the plugin's `bin/` on the Bash tool's `PATH` as
-            -  `--plugin-dir` does, so `squiz threads`, `squiz reply` and `squiz resolve`
-            -  resolve under both.
-            +- **The name the coding agent runs resolves under an install as it does under
-            +  `--plugin-dir`.** An install puts the plugin's `bin/` on the Bash tool's `PATH`,
-            +  so `squiz threads` and `squiz reply` find the binary either way. What was
-            +  established is the lookup of `squiz` itself; which commands it dispatches is its
-            +  own question and nothing here measures it.
-             
-             ## Needs your input
-             
             ```
           criteria:
             - { name: contradicts-the-change, description: "You are also given the sources. Question: does the pull request state, about what the change does or how the code now behaves, something the diff contradicts, such that a reviewer checking the code against it would raise a finding: a wrong mechanism, timing, scope or result? A statement of intent the diff does not carry out counts, when it is stated as what the change does. A loose phrase whose plain reading the diff bears out does not count, nor does an edge case the statement does not claim to cover." }

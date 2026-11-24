@@ -8,7 +8,7 @@ case's own criteria. Writes <case>/eval.yaml. The judges get the request and
 the branch's diff in their prompt, since a repo snapshot carries no history.
 With no cases named, generates every gen/*.yaml.
 """
-import glob, json, os, shlex, subprocess, sys
+import glob, json, os, shlex, shutil, subprocess, sys, tempfile
 
 JUDGES = ['gpt-6.2-astra']  # add models here for a majority across them
 QUESTIONS = ['contradicts-the-change', 'claims-unshown', 'no-effect-unchecked',
@@ -16,6 +16,7 @@ QUESTIONS = ['contradicts-the-change', 'claims-unshown', 'no-effect-unchecked',
              'transcribed-figure', 'unverified-as-risk', 'obvious-filler', 'missed-worst-case']
 HEADINGS = ['Intent', 'What changed', 'What did not change', 'Risks', 'Verification', 'Notes']
 FIXTURE = '-c user.name=fixture -c user.email=fixture@example.com'
+CLOSES = r'\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\d'
 
 T = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 E = sys.argv[1]
@@ -27,6 +28,21 @@ q = json.dumps  # a JSON string is a valid YAML double-quoted scalar
 def load(path):
     js = 'console.log(JSON.stringify(Bun.YAML.parse(await Bun.file(process.argv[1]).text())))'
     return json.loads(subprocess.check_output(['bun', '-e', js, path]))
+
+
+def net_diff(case, has_fix):
+    """The branch's diff against main once every commit is applied."""
+    with tempfile.TemporaryDirectory() as d:
+        w = f'{d}/w'
+        shutil.copytree(f'{E}/{case}/workspace', w)
+        git = lambda *a, **k: subprocess.run(['git', '-C', w, *a], check=True, capture_output=True, text=True, **k)
+        git('init', '-q')
+        git('add', '-A')
+        git(*FIXTURE.split(), 'commit', '-q', '-m', 'base')
+        for p in ['change.patch'] + (['fix.patch'] if has_fix else []):
+            git('apply', os.path.abspath(f'{E}/{case}/{p}'))
+        git('add', '-A')
+        return git('diff', '--cached').stdout
 
 
 def block_scalar(text, indent):
@@ -43,11 +59,13 @@ def structural(output, tables_ok):
         ('headings-in-order', '|'.join(
             rf'^## {later}\s*$[\s\S]*^## {earlier}\s*$'
             for i, earlier in enumerate(HEADINGS) for later in HEADINGS[i + 1:]).join(['(?m)', '']), True),
-        # A closing keyword under any heading but Intent.
-        ('closes-in-intent', r'(?m)^## (?!Intent\s*$)[^\n]*\n(?:(?!## )[^\n]*\n)*?[^\n]*\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\d', True),
+        # A closing keyword before the first heading, or under any heading but
+        # Intent. (?<![\s\S]) is the start of the file.
+        ('closes-in-intent', r'(?m)(?:(?<![\s\S])|^## (?!Intent\s*$)[^\n]*\n)(?:(?!## )[^\n]*\n)*?[^\n]*' + CLOSES, True),
     ]
     if not tables_ok:
-        out.append(('no-table', r'(?m)^\|[^\n]*\|[ \t]*\n\|[ \t:|-]*-{3,}', True))
+        # A GFM header row, then a delimiter row; outer pipes are optional.
+        out.append(('no-table', r'(?m)^ {0,3}[^\n]*\|[^\n]*\n {0,3}(?=[^\n]*\|)\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$', True))
     return out
 
 
@@ -55,10 +73,8 @@ for case in cases:
     g = load(f'{T}/gen/{case}.yaml')
     output = g.get('output', 'pr/new.md')
     prompt = g['prompt'].rstrip('\n') + '\n'
-    diff = open(f'{E}/{case}/change.patch').read()
     has_fix = os.path.exists(f'{E}/{case}/fix.patch')
-    if has_fix:
-        diff += open(f'{E}/{case}/fix.patch').read()
+    diff = net_diff(case, has_fix)
 
     setup = (f"git init -q -b main && git add -A -- . ':!change.patch' ':!fix.patch' && "
              f"git {FIXTURE} commit -q -m 'Initial commit' && git checkout -q -b {shlex.quote(g['branch'])} && "

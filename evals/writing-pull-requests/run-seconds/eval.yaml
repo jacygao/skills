@@ -66,10 +66,10 @@ stimuli:
         config: { path: pr/new.md, pattern: "(?m)^## What changed\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## Intent\\s*$|^## Risks\\s*$[\\s\\S]*^## Intent\\s*$|^## Verification\\s*$[\\s\\S]*^## Intent\\s*$|^## Notes\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What changed\\s*$|^## Verification\\s*$[\\s\\S]*^## What changed\\s*$|^## Notes\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## What did not change\\s*$|^## Notes\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Verification\\s*$", negate: true }
       - name: closes-in-intent
         type: file-matches
-        config: { path: pr/new.md, pattern: "(?m)^## (?!Intent\\s*$)[^\\n]*\\n(?:(?!## )[^\\n]*\\n)*?[^\\n]*\\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\\d", negate: true }
+        config: { path: pr/new.md, pattern: "(?m)(?:(?<![\\s\\S])|^## (?!Intent\\s*$)[^\\n]*\\n)(?:(?!## )[^\\n]*\\n)*?[^\\n]*\\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\\d", negate: true }
       - name: no-table
         type: file-matches
-        config: { path: pr/new.md, pattern: "(?m)^\\|[^\\n]*\\|[ \\t]*\\n\\|[ \\t:|-]*-{3,}", negate: true }
+        config: { path: pr/new.md, pattern: "(?m)^ {0,3}[^\\n]*\\|[^\\n]*\\n {0,3}(?=[^\\n]*\\|)\\|?[ \\t]*:?-+:?[ \\t]*(?:\\|[ \\t]*:?-+:?[ \\t]*)*\\|?[ \\t]*$", negate: true }
       - name: judges
         type: panel
         config:
