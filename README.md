@@ -1,7 +1,8 @@
 # Skills
 
-Claude Code skills for building software with coding agents, shipped as one
-plugin. Each skill is named `skills:<name>`, such as `skills:working-issues`.
+Agent skills for building software with coding agents. Each one is a folder
+holding a `SKILL.md`, so any agent that reads that format can load it, such as
+Claude Code or GitHub Copilot.
 
 | Skill | Purpose | Project | Eval with skill | Eval without | Details |
 |---|---|---|---|---|---|
@@ -19,7 +20,10 @@ plugin. Each skill is named `skills:<name>`, such as `skills:working-issues`.
 
 ## Use it in a project
 
-Check this into the project's `.claude/settings.json`:
+### Claude Code
+
+The skills ship as one plugin, and each is named `skills:<name>`, such as
+`skills:working-issues`. Check this into the project's `.claude/settings.json`:
 
 ```json
 {
@@ -34,6 +38,14 @@ Check this into the project's `.claude/settings.json`:
 }
 ```
 
+### GitHub Copilot and other agents
+
+Copy each skill's folder from `skills/` into the folder the agent reads skills
+from: `.github/skills/` in the project for GitHub Copilot, or `~/.copilot/skills/`
+for every project.
+
+### AGENTS.md
+
 Each skill's README gives the lines to add to the project's `AGENTS.md`.
 Rules files and `CLAUDE.md` content cannot ship in a plugin, so a project keeps
 its `.claude/rules/` itself. Load `writing-rules` before editing any of them.
@@ -42,7 +54,8 @@ its `.claude/rules/` itself. Load `writing-rules` before editing any of them.
 
 Each skill with an eval has its cases in `evals/<skill>/`. The score is the
 mean grade across every case and trial, with the skill and with no skill. A
-dash means the skill has no eval yet. To rerun one:
+dash means the skill has no eval yet. The agent under test runs through the
+GitHub Copilot SDK, on Claude Opus 5.5. To rerun one:
 
 ```bash
 cd evals/<skill> && vally experiment run skill.experiment.yaml
