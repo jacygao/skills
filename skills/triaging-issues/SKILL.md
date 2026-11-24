@@ -107,9 +107,15 @@ One subtask is **one isolated, complete purpose**:
   it is two subtasks
 
 Split at a seam, not at a line count: a directory with its own reason to change,
-a pure transform under an I/O wrapper, a decision one part makes and the next
-consumes. Put the dangerous code in its own subtask, away from the large
+a pure transform under an I/O wrapper, code that computes a decision and code
+that acts on it. Put the dangerous code in its own subtask, away from the large
 mechanical thing sitting next to it.
+
+**A split carries every requirement, the specification's as well as the
+issue's.** Each sub-issue states what it must meet as an acceptance criterion,
+not as a choice it may make: "the token is read only from the keychain", not
+"decide where the token is read from". Nothing the parent asks for is left on
+the parent alone.
 
 **Load the `writing-issues` skill** before the first `gh issue create`. The issue
 being split becomes the parent. Add a `## Decomposition` section to its body
