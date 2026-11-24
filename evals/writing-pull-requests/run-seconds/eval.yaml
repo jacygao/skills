@@ -1,0 +1,604 @@
+# Expected: A body saying that on Harbor's agent timeout suss now kills the harness's process group inside the sandbox, captures the patch, writes a `timed-out` record and passes the cancel on, Closes #38. It says a cancelled run's `run_seconds` runs until the stop returns, so it includes the stop exec (up to about 15 seconds) unlike a finished run's, and it says what happens when the stop fails. It describes this as behaviour, not by `_start`, `STOP_SECONDS` or `result.cancelled`, and never says the time ends at the cancel.
+name: writing-pull-requests-run-seconds
+description: "A cancel path whose timing the brief describes one way and the code does another. From swe-drill #41 (then suss): the body said a cancelled run's `run_seconds` is \"measured to the cancel\", while the diff takes it after the stop exec returns; the reviewer raised a finding on the description, then withdrew it as relying on the inaccurate description."
+defaults:
+  runs: 3
+  timeout: 20m
+  judge_timeout: 10m
+  executor: copilot-sdk
+  model: claude-opus-5.5
+scoring:
+  threshold: 0.8
+  weights:
+    skill-invocation: 0
+    file-matches: 0.294118
+    panel: 0.705882
+agent_environment:
+  skills: [../../../skills/writing-pull-requests]
+  files: [{ src: workspace, dest: . }, { src: change.patch, dest: change.patch }]
+  commands: ["git init -q -b main && git add -A -- . ':!change.patch' ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Initial commit' && git checkout -q -b agent/harbor-timeout-record && git apply change.patch && rm change.patch && git add -A -- . ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Write a timed-out suss.json when Harbor'\"'\"'s agent timeout stops run'"]
+stimuli:
+  - name: run-seconds
+    prompt: |
+      Read AGENTS.md first.
+
+      This branch does issue #38 (`issues/38.md`). Harbor 0.22.0 runs the agent
+      phase in `asyncio.wait_for`. When that fired, `SussAgent.run` got a
+      `CancelledError`, captured the patch while the harness was still running in
+      the container, and wrote no `suss.json`.
+
+      What I did:
+
+      - Every harness command now runs under the bash wrapper from the Docker
+        exec-timeout note, whether or not `max_seconds` is set. The wrapper writes
+        the command's process-group id to a file in the logs directory, named for
+        that start, and deletes it once the command exits.
+      - On a cancel, suss kills that group with one more `exec`, bounded so that a
+        stuck exec cannot hang the trial, since Harbor waits on a cancelled agent
+        with no limit. `run` then returns a `timed-out` result, with `run`'s exit
+        code `null` and `run_seconds` measured to the cancel, and carries the
+        `CancelledError` back instead of raising it.
+      - `SussAgent.run` captures the patch and writes `suss.json` within a cleanup
+        limit, then raises the cancel, so Harbor still sees the timeout.
+      - Spec § 3 now says a trial is also `timed-out` when Harbor's agent timeout
+        stops it, and its example shows `run_seconds` as `1290.4`.
+      - New tests cancel `run` mid-run through the local environment, with and
+        without `max_seconds`, while the fake harness has a backgrounded child due
+        to write to the workspace, and check that no harness process survives, the
+        late write never lands, and the record is `timed-out`. Another wraps `run`
+        in `asyncio.wait_for`, as Harbor does, and expects `TimeoutError`.
+
+      `uv run pytest` passed.
+
+      Open a pull request for this branch.
+    graders:
+      - name: skill-loaded
+        type: skill-invocation
+        config: { required: [writing-pull-requests] }
+      - name: title-on-first-line
+        type: file-matches
+        config: { path: pr/new.md, pattern: "^# \\S", negate: false }
+      - name: headings-from-the-template
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## (?!(?:Intent|What changed|What did not change|Risks|Verification|Notes)\\s*$)", negate: true }
+      - name: headings-in-order
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## What changed\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## Intent\\s*$|^## Risks\\s*$[\\s\\S]*^## Intent\\s*$|^## Verification\\s*$[\\s\\S]*^## Intent\\s*$|^## Notes\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What changed\\s*$|^## Verification\\s*$[\\s\\S]*^## What changed\\s*$|^## Notes\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## What did not change\\s*$|^## Notes\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Verification\\s*$", negate: true }
+      - name: closes-in-intent
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## (?!Intent\\s*$)[^\\n]*\\n(?:(?!## )[^\\n]*\\n)*?[^\\n]*\\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\\d", negate: true }
+      - name: no-table
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^\\|[^\\n]*\\|[ \\t]*\\n\\|[ \\t:|-]*-{3,}", negate: true }
+      - name: judges
+        type: panel
+        config:
+          models: [gpt-6.2-astra]
+          aggregation: majority
+          scoring: binary
+          evidence: [{ source: repo, max_file_bytes: 200000 }, { source: trajectory }]
+          prompt: |
+            The agent was asked to open a GitHub pull request, with this request:
+
+            Read AGENTS.md first.
+
+            This branch does issue #38 (`issues/38.md`). Harbor 0.22.0 runs the agent
+            phase in `asyncio.wait_for`. When that fired, `SussAgent.run` got a
+            `CancelledError`, captured the patch while the harness was still running in
+            the container, and wrote no `suss.json`.
+
+            What I did:
+
+            - Every harness command now runs under the bash wrapper from the Docker
+              exec-timeout note, whether or not `max_seconds` is set. The wrapper writes
+              the command's process-group id to a file in the logs directory, named for
+              that start, and deletes it once the command exits.
+            - On a cancel, suss kills that group with one more `exec`, bounded so that a
+              stuck exec cannot hang the trial, since Harbor waits on a cancelled agent
+              with no limit. `run` then returns a `timed-out` result, with `run`'s exit
+              code `null` and `run_seconds` measured to the cancel, and carries the
+              `CancelledError` back instead of raising it.
+            - `SussAgent.run` captures the patch and writes `suss.json` within a cleanup
+              limit, then raises the cancel, so Harbor still sees the timeout.
+            - Spec § 3 now says a trial is also `timed-out` when Harbor's agent timeout
+              stops it, and its example shows `run_seconds` as `1290.4`.
+            - New tests cancel `run` mid-run through the local environment, with and
+              without `max_seconds`, while the fake harness has a backgrounded child due
+              to write to the workspace, and check that no harness process survives, the
+              late write never lands, and the record is `timed-out`. Another wraps `run`
+              in `asyncio.wait_for`, as Harbor does, and expects `TimeoutError`.
+
+            `uv run pytest` passed.
+
+            Open a pull request for this branch.
+
+            It wrote the pull request to pr/new.md: the title on the first line, then the
+            body. Judge only that file. Each criterion is one question about it. Answer
+            each question on its own: look only for what it asks, and ignore every other
+            quality of the pull request, good or bad. Answer "yes" only if you can quote
+            the words in the pull request that make it so, and quote them in your
+            reasoning. Score a criterion 0 (fail) if the answer is yes, and 1 (pass) if it
+            is no.
+
+            The pull request describes the branch's change. Its diff against main, as the
+            agent found it, is below. The repository's other files are as they are on the
+            branch. Read the diff and the files for a question that says "given the
+            sources", and for no other. Read the agent's session only for a question that
+            names it.
+
+            ```diff
+            diff --git a/docs/specs/suss-spec.md b/docs/specs/suss-spec.md
+            index 88283b8..eecd015 100644
+            --- a/docs/specs/suss-spec.md
+            +++ b/docs/specs/suss-spec.md
+            @@ -120,16 +120,19 @@ directory as `agent/` in the trial's directory under `results/`.
+               "base": "5568b2e0a686cc4d838bddc095b831379143e61b",
+               "status": "ok",
+               "exit_codes": { "install": 0, "run": 0 },
+            -  "run_seconds": 1290,
+            +  "run_seconds": 1290.4,
+               "patch_bytes": 4182
+             }
+             ```
+             
+             - `grader` is the `dataset` that `suss.toml` names, and the commit of the
+               checkout `suss run` used.
+            -- `status` is `ok`, `harness-failed` or `timed-out`.
+            +- `status` is `ok`, `harness-failed` or `timed-out`. A trial is `timed-out`
+            +  when suss stops `run` at `max_seconds`, and when Harbor's agent timeout stops
+            +  the trial while `run` is going. Either way, suss stops the harness inside the
+            +  sandbox, then captures the patch and writes the record.
+             - `exit_codes` holds the exit code of `install` and of `run`. A command suss
+            -  skipped, or stopped at `max_seconds`, has `null`.
+            +  skipped or stopped has `null`.
+             
+             ## 4. The harness contract
+             
+            diff --git a/src/suss/agent.py b/src/suss/agent.py
+            index c9e78f3..312867e 100644
+            --- a/src/suss/agent.py
+            +++ b/src/suss/agent.py
+            @@ -7,6 +7,7 @@ suss.toml, the manifest and the grader's commit, is read in the constructor,
+             so a bad config fails before a sandbox starts.
+             """
+             
+            +import asyncio
+             import json
+             import shlex
+             import subprocess
+            @@ -27,6 +28,8 @@ from suss.harness import SandboxPaths
+             from suss.workspace import WORKSPACES, capture_patch, find_workspace, read_base
+             
+             RECORD_NAME = "suss.json"
+            +# How long a cancelled run may take to capture the patch and write suss.json.
+            +CLEANUP_SECONDS = 60
+             
+             
+             @dataclass(frozen=True)
+            @@ -104,6 +107,11 @@ class SussAgent(BaseAgent):
+                     The patch is captured however run ends, even when it raises, since a
+                     lost change reads exactly like a harness that changed nothing. suss.json
+                     is written only when run returned a status.
+            +
+            +        When the task is cancelled, as Harbor's agent timeout does, the harness
+            +        is stopped first and the trial is `timed-out`. The CancelledError is
+            +        raised once suss.json is written, or once CLEANUP_SECONDS have passed,
+            +        so Harbor still sees the timeout.
+                     """
+                     prepared = self._prepared
+                     if prepared is None:
+            @@ -120,11 +128,25 @@ class SussAgent(BaseAgent):
+                             prepared.install_exit_code,
+                             self.paths,
+                         )
+            +        except BaseException:
+            +            await capture_patch(environment, prepared.workspace, prepared.base, self.paths.logs)
+            +            raise
+            +
+            +        try:
+            +            # Harbor waits on a cancelled agent with no limit.
+            +            async with asyncio.timeout(CLEANUP_SECONDS if result.cancelled else None):
+            +                await self._record(environment, prepared, result)
+                     finally:
+            -            patch_bytes = await capture_patch(
+            -                environment, prepared.workspace, prepared.base, self.paths.logs
+            -            )
+            +            if result.cancelled is not None:
+            +                raise result.cancelled
+             
+            +    async def _record(
+            +        self, environment: BaseEnvironment, prepared: _Prepared, result: harness.HarnessResult
+            +    ) -> None:
+            +        """Capture the patch, then write suss.json beside it."""
+            +        patch_bytes = await capture_patch(
+            +            environment, prepared.workspace, prepared.base, self.paths.logs
+            +        )
+                     record = {
+                         "arm": self._config.arm.name,
+                         "harness": {"name": self._manifest.name, "version": self._manifest.version},
+            diff --git a/src/suss/harness.py b/src/suss/harness.py
+            index 99b52f1..bc61198 100644
+            --- a/src/suss/harness.py
+            +++ b/src/suss/harness.py
+            @@ -3,13 +3,15 @@ Read a harness's manifest from its adapter directory, and run its `install`
+             and `run` in the sandbox as the harness contract fixes.
+             """
+             
+            +import asyncio
+             import math
+            +import secrets
+             import shlex
+             import time
+             import tomllib
+             from collections.abc import Mapping
+             from dataclasses import dataclass
+            -from pathlib import Path
+            +from pathlib import Path, PurePosixPath
+             from typing import Literal
+             
+             from harbor.environments.base import BaseEnvironment
+            @@ -26,6 +28,9 @@ TIMED_OUT = "suss: stopped at the time limit"
+             # exec's own timeout sits this far past the limit, as a backstop for a sandbox
+             # where the limit cannot run.
+             EXEC_TIMEOUT_GRACE_SECONDS = 30
+            +# How long stopping a cancelled command may take. Harbor waits on a cancelled
+            +# agent with no limit, so a stuck exec here would hang the trial.
+            +STOP_SECONDS = 10
+             
+             
+             class ManifestError(Exception):
+            @@ -118,6 +123,9 @@ class HarnessResult:
+                 exit_codes: dict[str, int | None]
+                 # None when run was skipped.
+                 run_seconds: float | None
+            +    # The cancel that stopped run, which the caller must raise once it has
+            +    # recorded the trial.
+            +    cancelled: asyncio.CancelledError | None = None
+             
+             
+             async def install(
+            @@ -135,7 +143,8 @@ async def install(
+                 """
+                 if manifest.install is None:
+                     return None
+            -    exit_code, _ = await _start(
+            +    await _make_logs(env, paths)
+            +    return await _start(
+                     env,
+                     manifest,
+                     manifest.install,
+            @@ -145,7 +154,6 @@ async def install(
+                     paths,
+                     INSTALL_LOG,
+                 )
+            -    return exit_code
+             
+             
+             async def run(
+            @@ -165,6 +173,11 @@ async def run(
+                 is not started and the trial is `harness-failed`. Raises HarnessError when
+                 the logs directory cannot be made, and lets any other failure of `exec`
+                 through, since neither is the harness's doing.
+            +
+            +    When the task is cancelled while `run` is going, the harness is stopped
+            +    inside the sandbox, and the trial is `timed-out`. The result then carries
+            +    the CancelledError instead of raising it, so that the caller can capture
+            +    the patch and record the trial first. The caller must raise it after.
+                 """
+                 if install_exit_code not in (0, None):
+                     return HarnessResult(
+            @@ -178,9 +191,20 @@ async def run(
+                 if arm.max_cost_usd is not None:
+                     args += ["--max-cost-usd", str(arm.max_cost_usd)]
+             
+            -    exit_code, run_seconds = await _start(
+            -        env, manifest, manifest.run, args, workspace, dotenv, paths, RUN_LOG, arm.max_seconds
+            -    )
+            +    await _make_logs(env, paths)
+            +    started = time.monotonic()
+            +    try:
+            +        exit_code = await _start(
+            +            env, manifest, manifest.run, args, workspace, dotenv, paths, RUN_LOG, arm.max_seconds
+            +        )
+            +    except asyncio.CancelledError as cancelled:
+            +        return HarnessResult(
+            +            status="timed-out",
+            +            exit_codes={"install": install_exit_code, "run": None},
+            +            run_seconds=time.monotonic() - started,
+            +            cancelled=cancelled,
+            +        )
+            +    run_seconds = time.monotonic() - started
+             
+                 if exit_code is None:
+                     status = "timed-out"
+            @@ -195,6 +219,14 @@ async def run(
+                 )
+             
+             
+            +async def _make_logs(env: BaseEnvironment, paths: SandboxPaths) -> None:
+            +    made = await env.exec(f"mkdir -p {shlex.quote(paths.logs)}")
+            +    if made.return_code != 0:
+            +        raise HarnessError(
+            +            f"cannot make the logs directory {paths.logs}: {(made.stdout or '').strip()}"
+            +        )
+            +
+            +
+             async def _start(
+                 env: BaseEnvironment,
+                 manifest: Manifest,
+            @@ -205,22 +237,17 @@ async def _start(
+                 paths: SandboxPaths,
+                 log: str,
+                 timeout_sec: float | None = None,
+            -) -> tuple[int | None, float]:
+            +) -> int | None:
+                 """
+                 Run an adapter's script in the workspace, with its output in the log.
+             
+            -    Returns its exit code, or None when it was stopped at the timeout, and the
+            -    seconds it ran for, which leave out the commands suss runs to prepare it.
+            +    Returns its exit code, or None when it was stopped at the timeout. When
+            +    the task is cancelled, it kills the script and everything it started
+            +    inside the sandbox, then raises the CancelledError.
+             
+                 No `user` is passed to exec, so the command runs as the environment's
+                 default user, which Harbor sets to the task's agent user.
+                 """
+            -    made = await env.exec(f"mkdir -p {shlex.quote(paths.logs)}")
+            -    if made.return_code != 0:
+            -        raise HarnessError(
+            -            f"cannot make the logs directory {paths.logs}: {(made.stdout or '').strip()}"
+            -        )
+            -
+                 executable = f"{paths.adapter.rstrip('/')}/{script}"
+                 log_path = f"{paths.logs.rstrip('/')}/{log}"
+                 # The shell writes the log, not suss, so the log holds what was printed
+            @@ -230,55 +257,83 @@ async def _start(
+                     " ".join(shlex.quote(part) for part in [executable, *args])
+                     + f" > {shlex.quote(log_path)} 2>&1"
+                 )
+            +    # A new name for each start, so a cancel never acts on an id that an
+            +    # earlier command left behind.
+            +    token = secrets.token_hex(8)
+            +    group_file = f"{paths.logs.rstrip('/')}/{PurePosixPath(log).stem}-{token}.pgid"
+            +    command = _limited(command, timeout_sec, group_file)
+                 # Only the named variables, so nothing else in the .env reaches the harness.
+                 passed = {name: dotenv[name] for name in manifest.env if name in dotenv}
+                 exec_timeout = None
+                 if timeout_sec is not None:
+            -        command = _limited(command, timeout_sec)
+                     exec_timeout = math.ceil(timeout_sec) + EXEC_TIMEOUT_GRACE_SECONDS
+            -    started = time.monotonic()
+                 try:
+                     result = await env.exec(command, cwd=workspace, env=passed, timeout_sec=exec_timeout)
+                 except RuntimeError as error:
+                     if not _is_exec_timeout(error):
+                         raise
+            -        return None, time.monotonic() - started
+            +        return None
+            +    except asyncio.CancelledError:
+            +        await _stop(env, group_file)
+            +        raise
+                 if TIMED_OUT in (result.stdout or "").splitlines():
+            -        return None, time.monotonic() - started
+            -    return result.return_code, time.monotonic() - started
+            +        return None
+            +    return result.return_code
+             
+             
+            -def _limited(command: str, seconds: float) -> str:
+            +def _limited(command: str, seconds: float | None, group_file: str) -> str:
+                 """
+            -    Wrap a command so that the sandbox itself kills it, and every process it
+            -    started, after `seconds`.
+            +    Wrap a command so that the sandbox itself can kill it, and every process
+            +    it started: after `seconds`, when given, and through `_stop` at any time.
+             
+                 exec's own timeout cannot be relied on for this: Docker's stops only the
+                 client on the host and leaves the command running in the container. The
+                 wrapper needs only bash, which Harbor runs every command with, and `sleep`.
+             
+                 It exits with the command's exit code. At the limit it prints TIMED_OUT,
+            -    then kills the command.
+            +    then kills the command. While the command runs, `group_file` holds the id
+            +    of its process group, and the wrapper deletes it once the command exits.
+                 """
+            -    return "\n".join(
+            -        [
+            -            # Job control puts each background job in a process group of its
+            -            # own, which a kill of the group then reaches all of.
+            -            "set -m",
+            -            f"{command} &",
+            -            "run=$!",
+            +    group = shlex.quote(group_file)
+            +    lines = [
+            +        # Job control puts each background job in a process group of its
+            +        # own, which a kill of the group then reaches all of.
+            +        "set -m",
+            +        f"{command} &",
+            +        "run=$!",
+            +        f'echo "$run" > {group}',
+            +    ]
+            +    if seconds is not None:
+            +        lines += [
+                         # `&&`, so that a missing sleep leaves the run to exec's backstop
+                         # rather than killing it at once. The marker goes out before the
+                         # kill, so killing the timer later cannot erase a timeout.
+                         f"{{ sleep {seconds} > /dev/null 2>&1 && echo {shlex.quote(TIMED_OUT)}"
+                         " && kill -KILL -- -$run 2> /dev/null; } &",
+                         "timer=$!",
+            -            'wait "$run"',
+            -            "code=$?",
+            -            'kill -KILL -- "-$timer" 2> /dev/null',
+            -            'exit "$code"',
+                     ]
+            -    )
+            +    lines += ['wait "$run"', "code=$?", f"rm -f {group}"]
+            +    if seconds is not None:
+            +        lines.append('kill -KILL -- "-$timer" 2> /dev/null')
+            +    lines.append('exit "$code"')
+            +    return "\n".join(lines)
+            +
+            +
+            +async def _stop(env: BaseEnvironment, group_file: str) -> None:
+            +    """
+            +    Kill the process group that `group_file` names, if the command is still
+            +    running.
+            +
+            +    Never raises an Exception, and gives up after STOP_SECONDS. A stop that
+            +    fails leaves the harness running, but the caller still has a trial to
+            +    record and a cancel to pass on.
+            +    """
+            +    group = shlex.quote(group_file)
+            +    command = f'[ -f {group} ] && kill -KILL -- "-$(cat {group})" 2> /dev/null; rm -f {group}'
+            +    try:
+            +        await asyncio.wait_for(env.exec(command, timeout_sec=STOP_SECONDS), STOP_SECONDS + 5)
+            +    except Exception:
+            +        pass
+             
+             
+             def _is_exec_timeout(error: RuntimeError) -> bool:
+            diff --git a/tests/test_agent.py b/tests/test_agent.py
+            index 0aaebc6..3a7b1bb 100644
+            --- a/tests/test_agent.py
+            +++ b/tests/test_agent.py
+            @@ -11,10 +11,12 @@ siblings, so nothing suss writes to /opt/suss can fall inside the workspace.
+             import asyncio
+             import dataclasses
+             import json
+            +import os
+             import re
+             import shlex
+             import shutil
+             import subprocess
+            +import time
+             from pathlib import Path
+             
+             import pytest
+            @@ -388,3 +390,112 @@ def test_files_go_into_opt_suss_as_root_and_belong_to_the_agent_user(
+                 assert any("chown" in command and "agent" in command for command in as_root)
+                 harness = [user for command, user in calls if "install.sh" in command or "run.sh" in command]
+                 assert harness == ["agent", "agent"], "the harness did not run as the agent user"
+            +
+            +
+            +# A harness mid-run with a child it backgrounded, which writes to the workspace
+            +# after the test has cancelled run.
+            +LATE_WRITE = "a late write"
+            +STILL_WORKING = (
+            +    f"{KNOWN_CHANGE}\n"
+            +    f'(sleep 2; echo "{LATE_WRITE}" >> hello.txt) &\n'
+            +    'echo $! $$ > "$here/run.pids"\n'
+            +    "sleep 30"
+            +)
+            +
+            +
+            +def without_max_seconds(trial: Trial) -> str:
+            +    config = trial.host / "unlimited.toml"
+            +    config.write_text(trial.config.read_text().replace("max_seconds = 60\n", ""))
+            +    return str(config)
+            +
+            +
+            +def cancel_mid_run(trial: Trial, env, agent: SussAgent) -> None:
+            +    """Cancel run once the harness has started its child, as Harbor's agent timeout does."""
+            +
+            +    async def scenario():
+            +        await agent.setup(environment=env)
+            +        running = asyncio.create_task(
+            +            agent.run(instruction=INSTRUCTION, environment=env, context=AgentContext())
+            +        )
+            +        pids = trial.sandbox_adapter / "run.pids"
+            +        deadline = time.monotonic() + 10
+            +        while not (pids.exists() and pids.read_text().strip()):
+            +            assert time.monotonic() < deadline, "the harness never started"
+            +            await asyncio.sleep(0.05)
+            +        running.cancel()
+            +        with pytest.raises(asyncio.CancelledError):
+            +            await running
+            +
+            +    go(scenario())
+            +
+            +
+            +def is_running(pid: int) -> bool:
+            +    try:
+            +        os.kill(pid, 0)
+            +    except ProcessLookupError:
+            +        return False
+            +    return True
+            +
+            +
+            +def test_a_cancelled_run_writes_a_timed_out_record(local_environment, trial):
+            +    trial.then("run", STILL_WORKING)
+            +
+            +    cancel_mid_run(trial, local_environment, trial.agent())
+            +
+            +    record = json.loads((trial.logs / "suss.json").read_text())
+            +    assert set(record) == set(spec_trial_record()), "suss.json's keys are not the spec's"
+            +    assert record["status"] == "timed-out"
+            +    assert record["exit_codes"] == {"install": 0, "run": None}
+            +    assert isinstance(record["run_seconds"], float)
+            +    assert record["run_seconds"] > 0
+            +    assert record["patch_bytes"] == len((trial.logs / "model.patch").read_bytes())
+            +
+            +
+            +@pytest.mark.parametrize("limit", ["max_seconds", "no max_seconds"])
+            +def test_a_cancelled_run_stops_the_harness_before_the_patch(
+            +    local_environment, trial, tmp_path, limit
+            +):
+            +    trial.then("run", STILL_WORKING)
+            +    config = str(trial.config) if limit == "max_seconds" else without_max_seconds(trial)
+            +
+            +    cancel_mid_run(trial, local_environment, trial.agent(config=config))
+            +
+            +    pids = [int(pid) for pid in (trial.sandbox_adapter / "run.pids").read_text().split()]
+            +    alive = [pid for pid in pids if is_running(pid)]
+            +    assert not alive, f"harness processes {alive} outlived the cancelled run"
+            +    # Past the moment the child would have written.
+            +    time.sleep(3)
+            +    assert LATE_WRITE not in (trial.workspace / "hello.txt").read_text(), (
+            +        "the harness went on changing the workspace after run was cancelled"
+            +    )
+            +    assert LATE_WRITE not in trial.patch()
+            +    assert_patch_carries_the_known_change(trial, tmp_path)
+            +
+            +
+            +def test_harbors_agent_timeout_still_sees_the_cancel(local_environment, trial):
+            +    trial.then("run", STILL_WORKING)
+            +    agent = trial.agent()
+            +
+            +    async def under_harbors_timeout():
+            +        await agent.setup(environment=local_environment)
+            +        await asyncio.wait_for(
+            +            agent.run(
+            +                instruction=INSTRUCTION, environment=local_environment, context=AgentContext()
+            +            ),
+            +            timeout=1,
+            +        )
+            +
+            +    with pytest.raises(TimeoutError):
+            +        go(under_harbors_timeout())
+            +    assert json.loads((trial.logs / "suss.json").read_text())["status"] == "timed-out"
+            +
+            +
+            +def test_a_run_that_finishes_leaves_no_process_group_behind(local_environment, trial):
+            +    trial.then("run", KNOWN_CHANGE)
+            +
+            +    trial.run(local_environment)
+            +
+            +    left = sorted(path.name for path in trial.logs.iterdir())
+            +    assert left == ["install.log", "model.patch", "run.log", "suss.json"], (
+            +        "a finished run left a file a later cancel could act on"
+            +    )
+            ```
+          criteria:
+            - { name: contradicts-the-change, description: "You are also given the sources. Question: does the pull request state, about what the change does or how the code now behaves, something the diff contradicts, such that a reviewer checking the code against it would raise a finding: a wrong mechanism, timing, scope or result? A statement of intent the diff does not carry out counts, when it is stated as what the change does. A loose phrase whose plain reading the diff bears out does not count, nor does an edge case the statement does not claim to cover." }
+            - { name: claims-unshown, description: "You are also given the sources, the agent's own session (the commands it ran and what they printed), and the request, which says what was run before. Question: does the pull request say something was verified, tested, measured or shown working that was not: neither run in the agent's session nor reported in the request, or run but not showing what the pull request says it shows, or not possible from this branch? A command listed as the check to run is not a claim that it showed something." }
+            - { name: no-effect-unchecked, description: "You are also given the sources. Question: does the pull request claim that nothing else refers to, depends on or is affected by what changed, while a file in the repository still refers to it as it was before the change?" }
+            - { name: leaves-inconsistent-unnamed, description: "You are also given the sources. Question: after the change, does the repository still hold a passage, table row or line of code that states the old behaviour of exactly what the change alters, so that someone reading it would now be misled about that behaviour, and the pull request neither changes it nor names it as left for later? Name the passage and quote the part of the pull request that should have covered it. A passage the pull request names, by section or file, as left as it is counts as named. Passages about neighbouring behaviour, generalisations that still hold, and wording a reader would not be misled by do not count." }
+            - { name: mechanism-not-behaviour, description: "Question: do the Intent or What changed sections (or headings meaning the same) describe the change mostly by internal names, such as functions, internal fields, constants or private modules a user or caller would not see, rather than by what a user, caller or reviewer sees change? A command, setting, file or output the user runs, edits or reads is not internal. Where the change is a refactor whose subject is those names, answer no." }
+            - { name: working-not-result, description: "Question: does the pull request report a check by its working rather than its result: a table mapping items one by one, a list of every item checked, line counts before and after, or similar, where one line saying what the check found would tell the reviewer the same? A figure the request asks the pull request to report, given in a line, does not count." }
+            - { name: transcribed-figure, description: "Question: does the pull request state, as a fact of the branch, a number that a command printed and that changes as the branch or project moves on, such as a test count (\"812 tests pass\"), a count of runs or trials, or a measured time? A limit or constant the change itself sets is not such a number, nor is an issue or pull request number, nor a figure the request asks the pull request to report." }
+            - { name: unverified-as-risk, description: "Question: under a section headed Risks (or a heading meaning the same), is there an item that is not a way the change could fail or harm, but something unverified, untried, deferred or undecided, such as \"no run has used it yet\" or \"not tested on Linux\"? A pull request with no such section answers no." }
+            - { name: obvious-filler, description: "Question: under What did not change or Risks (or headings meaning the same), is there a line that tells the reviewer nothing they would have doubted from the rest of the pull request, such as that an untouched command still behaves as before, or a risk the change plainly cannot carry? A line naming something left inconsistent on purpose, a deliberate omission or a follow-up issue is not filler." }
+            - { name: missed-worst-case, description: "You are also given the sources. Question: does the change introduce, or make worse, a worst case or a silent failure that a reviewer would want to weigh before merging (how long something can now take, what it can now drop, what it now does on an input the old code refused), and does the pull request leave it out or state it wrongly? Failures the old code had as well, and edge cases in paths the change does not touch, do not count. Answer no if the change carries no such case." }
+            - { name: run-seconds-to-the-cancel, description: "You are also given the sources. Question: does the pull request say that a cancelled run's `run_seconds`, or the time suss records for it, is measured to the cancel, ends when the cancel arrives, or leaves out the time suss spends stopping the harness? Given the diff, it is taken after the stop exec returns, so it includes that exec. A statement that it runs until the stop returns, or until the harness is killed and the stop comes back, answers no. A body that says nothing about how a cancelled run is timed answers no." }
+            - { name: run-seconds-unstated, description: "Question: does the pull request leave out how a cancelled run's `run_seconds` is measured: where its time ends? A body that says where it ends, rightly or wrongly, answers no. Saying only that the record has a `run_seconds`, or that it is a decimal, answers yes." }

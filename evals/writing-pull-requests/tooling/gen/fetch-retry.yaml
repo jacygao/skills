@@ -1,0 +1,55 @@
+# The case. It starts from ../../fetch-retry/workspace/.
+description: >
+  A retry loop wrapped around a command that keeps its own retries, so the
+  worst case is their product. From swe-drill #288: the body named
+  `swe_drill.copilot.fetch()` and said a gone download "now takes about 50
+  seconds longer to fail", leaving out that curl's own `--retry 5` still runs
+  inside each of the five tries.
+expected_outcome: >
+  A body saying the Copilot CLI installs now survive a dropped HTTP/2 stream
+  (curl exit 92), which curl's own `--retry` skips, and naming the downloads
+  covered: Copilot CLI from npm (agents and judge), hve-core's archive and
+  squiz's Node and squiz archives, with Part of #282. Its worst case says
+  that a failure curl retries itself (a timeout, 408, 429 or 5xx) is now
+  attempted 6 times on each of 5 tries, about 30 attempts and three and a
+  half minutes of waiting, against about 30 seconds before, and that 50
+  seconds holds only for a failure curl does not retry. It describes the
+  behaviour, not a function name, and does not claim Claude Code's install,
+  which Harbor runs, is covered.
+branch: copilot/retry-downloads
+commit: Try a dropped download again in every install, which curl's own --retry skips
+prompt: |
+  Read AGENTS.md first.
+
+  In the senior check for #282 (`issues/282.md`), turborepo's reference fix
+  got no grade: the verifier's Copilot CLI download from npm failed with
+  `curl: (92) HTTP/2 stream 0 was not closed cleanly: INTERNAL_ERROR (err 2)`.
+  curl's `--retry 5` retries timeouts and some HTTP errors, not a dropped
+  stream, so it never tried again.
+
+  What I did on this branch:
+
+  - Added a shell function, `fetch <file> <url>`, that each install script
+    defines and downloads through. It runs curl as before and tries again on
+    any failure, 5 tries in all, pausing 5, 10, 15 and 20 seconds between
+    them. After the last try it fails with curl's exit code.
+  - Moved every download an install makes onto it: Copilot CLI from npm, which
+    the Copilot agents and the verifier's judge install, and whose binary the
+    senior validation agent uses; hve-core's archive; and squiz's Node and
+    squiz archives.
+  - New tests give the Copilot CLI install a stand-in curl that exits 92, as
+    the real one did: the install succeeds after 2 such failures, and fails
+    after the 5th.
+
+  `uv run pytest` passed. Before the change, the two new tests failed with
+  the same `NetworkConnectionError … exit 92` the senior check showed.
+
+  This is part of #282, not all of it.
+
+  Open a pull request for this branch.
+criteria:
+  - name: retry-worst-case-understated
+    description: "You are also given the sources. Question: given the diff, curl's own `--retry 5` still runs inside each of the five tries, so a failure curl retries itself (a timeout, or HTTP 408, 429 or 5xx) is now attempted 6 times on each try, up to 30 attempts with about three and a half minutes of waiting, against 6 attempts and about 30 seconds before. Does the pull request leave this compounded case out, or give a smaller figure (such as about 50 seconds longer) as how long a failing download can now take? A body that states the compounded case answers no, whatever it says of failures curl does not retry."
+  - name: every-install-overclaimed
+    description: "You are also given the sources. Question: does the pull request, title included, say that every install, or every download an install makes, now tries again, without excepting Claude Code's install, which Harbor's own agent runs from its bootstrap script and the diff does not touch? Naming the downloads that are covered, with no claim about all of them, answers no."
+tables_ok: false

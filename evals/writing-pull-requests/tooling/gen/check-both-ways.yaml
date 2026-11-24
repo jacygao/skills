@@ -1,0 +1,55 @@
+# The case. It starts from ../../check-both-ways/workspace/.
+description: >
+  A small spec cut, made under a brief that asks for a check "in each PR", where
+  the check's working is longer than the change. From squiz #931: two sentences
+  of § 1 cut, +4/-7, and a body carrying two "Check both ways" tables and § 1's
+  line counts on main and on the branch.
+expected_outcome: >
+  A short body. Intent places it in the spec's rewrite from #908's
+  requirements list, as § 1 Purpose written from R1.0.1 and R1.0.2. What
+  changed names the two removals and why: the clause on who can see how each
+  finding was settled, which no requirement carries, and the local venue's
+  sentence, cut to a citation of § 4, which states it. One line gives the
+  check's result: both requirements stated once, nothing in § 1 off the list.
+  No table, no sentence-by-sentence mapping, no line counts.
+branch: spec/rewrite-1-purpose
+commit: Rewrite § 1 Purpose from its requirements
+prompt: |
+  Read AGENTS.md first.
+
+  `docs/specs/review-harness-spec.md` is being rewritten to the size of the
+  product, one H2 per pull request, each written from the reviewed requirements
+  list on #908. This branch is § 1 Purpose. The plan the owner set for the
+  rewrite says:
+
+  > 2. Rewrite one H2 section per PR, written from the reviewed list, not from the old prose.
+  > 3. In each PR, check both ways: every listed requirement for that section is stated once, and the section states nothing that isn't on the list. Report the line counts before and after.
+
+  What I did:
+
+  - Rewrote § 1 from its two requirements, R1.0.1 and R1.0.2.
+  - Cut the clause saying a person, or an agent trusted to merge, can see how
+    each finding was settled. It says who reads the record, not what squiz
+    does, and no requirement carries it.
+  - Cut the local venue's sentence to a citation of § 4. R4.0.1 states it
+    there, and the list marks § 1's copy for removal.
+  - Left the version line alone.
+
+  I checked both ways. R1.0.1 and R1.0.2 are each stated once in the new § 1.
+  Every sentence in it states one of them, apart from the bold opening, which
+  sums up both, and the local-venue clause, which cites § 4 for R4.0.1. Nothing
+  in `main`'s § 1 disagreed with the list, and the list missed no requirement
+  here. § 1, from its heading to the line before § 2, is 12 lines on `main` and
+  9 on this branch.
+
+  It is a spec-only change, so there was nothing to run.
+
+  Open a pull request for this branch.
+criteria:
+  - name: check-not-one-line
+    description: "Question: does the body report the both-ways check as its working rather than its result: a table either way, the new sentence quoted for each R-id, or a sentence-by-sentence list of R-ids? Quote it. § 1's line counts before and after, which the plan asks to be reported, given in a line, are not a defect. One line or so of the result, such as 'R1.0.1 and R1.0.2 are each stated once, and § 1 states nothing off the list', is not a defect. Leaving the result out altogether is judged by check-result-missing, not here."
+  - name: check-result-missing
+    description: "Question: does the body leave out the check's result, that both of § 1's listed requirements are stated in the new text and that it states nothing off the list? The brief asked for the check in each PR, and a reviewer of this rewrite is looking for a requirement dropped or changed. Answer yes, quoting the nearest line, if neither half of the result appears anywhere in the body."
+  - name: removal-unexplained
+    description: "Question: does the body fail to name either of the two removals, or give no reason for one? The two: the clause on who can see how each finding was settled (a person, or an agent trusted to merge), which no requirement carries; and the local venue's sentence, now a citation of § 4, because § 4 states it (R4.0.1). Answer yes, quoting what the body says instead, if either is missing, or is named with no reason for it."
+tables_ok: false

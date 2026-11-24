@@ -1,0 +1,375 @@
+# Expected: A body listing each removed passage by kind and where it went, the no-minimum-version decision, and the passages kept or left on purpose. It either fixes the four notes that still name § 2 Verified against (a-subagent-reads-the-file-whenever-its-output-is-cut, the-deep-grant-does-not-confine, cost-arrives-during-a-run, githubs-diff-is-git-diff-byte-for-byte) or names them as left pointing at a heading and table that are gone. Any claim that nothing else refers to the heading names a search over the whole repository. No line counts and no version arrow.
+name: writing-pull-requests-heading-rename
+description: "A spec cleanup that renames a heading and moves its table into a note, while other files still point at both. From squiz #503: the body said \"Nothing referred to the old heading\", and its grep left out docs/notes, where four notes still pointed at \u00a7 2 Verified against."
+defaults:
+  runs: 3
+  timeout: 20m
+  judge_timeout: 10m
+  executor: copilot-sdk
+  model: claude-opus-5.5
+scoring:
+  threshold: 0.8
+  weights:
+    skill-invocation: 0
+    file-matches: 0.294118
+    panel: 0.705882
+agent_environment:
+  skills: [../../../skills/writing-pull-requests]
+  files: [{ src: workspace, dest: . }, { src: change.patch, dest: change.patch }]
+  commands: ["git init -q -b main && git add -A -- . ':!change.patch' ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Initial commit' && git checkout -q -b spec/cleanup-485 && git apply change.patch && rm change.patch && git add -A -- . ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Remove from spec \u00a7 1 and \u00a7 2 what the specification does not need'"]
+stimuli:
+  - name: heading-rename
+    prompt: |
+      Read AGENTS.md first.
+
+      This branch does #485 for § 1 Purpose and § 2 Dependencies only. Seven other
+      cleanup issues are editing the other sections in parallel, and each bumps the
+      spec version too.
+
+      What I did:
+
+      - § 1: removed the sentences on how a review starts and where the reviewer
+        runs. § 3's opening paragraph says the same.
+      - § 2: moved the "Verified against" version table, its lead-in and the
+        re-check commands into a new note,
+        `docs/notes/no-dependency-version-is-a-minimum.md`, and renamed the H3 to
+        "Behaviour the design rests on". It now holds only the behaviour list.
+      - Took the evidence out of each behaviour bullet ("Measured against …", "three
+        of five foreground subagents ended it anyway", "Most subagents ran it that
+        way", the Bash tool's documentation source, the `gh pr review --help`
+        re-check). Most of it was already in a note:
+        `a-review-the-shell-moves-to-the-background-is-often-killed-by-its-own-subagent.md`,
+        `the-runtime-kills-the-reviewer-too-but-only-sigterm-is-certain.md`,
+        `a-subagent-reads-the-file-whenever-its-output-is-cut.md` and
+        `a-pane-outlives-the-call-that-made-it-and-both-wakes-reach-an-idle-session.md`.
+        The rest went to the new note, including the process forms that do not
+        outlive a stop (a plain `&`, `setsid` alone, `nohup … & disown`,
+        `( nohup … & )`), marked unverified. The plain `&` is also recorded in
+        `a-pane-outlives-…`.
+      - Removed the `SubagentStop` `session_id` / `agent_id` bullet. § 3 The Claude
+        Code hooks says it in its owner table, and `an-episode-keys-on-agent-id.md`
+        holds the evidence.
+      - Bumped the spec version.
+
+      For the issue's last criterion I decided no version is a requirement: § 2
+      states none, the setup check reports what is missing or unauthenticated
+      rather than what is old, and Node 24 is the only minimum, which § 8 owns. The
+      new note records this.
+
+      Kept, though borderline: "ten minutes after its turn ended as well as one"
+      (it says a wake has no expiry, which the wake design depends on); the
+      `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS` and `BASH_*_TIMEOUT_MS` names (someone
+      testing the bounds needs them); the optional-multiplexer paragraph; and the
+      `**Squiz review` prefix trap under Identity. The 600-second Bash ceiling and
+      the stall rule are also in § 7, and the wakes in § 3 The report; § 2 keeps
+      them because § 3 and § 6 point at § 2 for them.
+
+      Found and left, because fixing it changes content rather than removing it:
+      "makes the call exit 0, so its output is never cut" conflicts with the bullet
+      above it, which says a long exit-0 output is saved to a file and shown as a
+      2 KB preview. It should read "never cut to an excerpt".
+
+      I ran
+      `grep -rn 'Verified against\|established rather than\|§ 2' src docs/specs skills commands charter.md hooks`.
+      Outside the spec, the only "Verified against" was a code comment in
+      `src/findings/diff.ts` naming the git version it was checked on. The
+      remaining `§ 2` references in the spec point at the outliving rule (§ 3 The
+      round host), the output cut (§ 6), Identity's markers (§ 3, § 4, § 6) and the
+      different-model rule (§ 4), all still in § 2.
+
+      Open a pull request for this branch.
+    graders:
+      - name: skill-loaded
+        type: skill-invocation
+        config: { required: [writing-pull-requests] }
+      - name: title-on-first-line
+        type: file-matches
+        config: { path: pr/new.md, pattern: "^# \\S", negate: false }
+      - name: headings-from-the-template
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## (?!(?:Intent|What changed|What did not change|Risks|Verification|Notes)\\s*$)", negate: true }
+      - name: headings-in-order
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## What changed\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## Intent\\s*$|^## Risks\\s*$[\\s\\S]*^## Intent\\s*$|^## Verification\\s*$[\\s\\S]*^## Intent\\s*$|^## Notes\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What changed\\s*$|^## Verification\\s*$[\\s\\S]*^## What changed\\s*$|^## Notes\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## What did not change\\s*$|^## Notes\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Verification\\s*$", negate: true }
+      - name: closes-in-intent
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## (?!Intent\\s*$)[^\\n]*\\n(?:(?!## )[^\\n]*\\n)*?[^\\n]*\\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\\d", negate: true }
+      - name: no-table
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^\\|[^\\n]*\\|[ \\t]*\\n\\|[ \\t:|-]*-{3,}", negate: true }
+      - name: judges
+        type: panel
+        config:
+          models: [gpt-6.2-astra]
+          aggregation: majority
+          scoring: binary
+          evidence: [{ source: repo, max_file_bytes: 200000 }, { source: trajectory }]
+          prompt: |
+            The agent was asked to open a GitHub pull request, with this request:
+
+            Read AGENTS.md first.
+
+            This branch does #485 for § 1 Purpose and § 2 Dependencies only. Seven other
+            cleanup issues are editing the other sections in parallel, and each bumps the
+            spec version too.
+
+            What I did:
+
+            - § 1: removed the sentences on how a review starts and where the reviewer
+              runs. § 3's opening paragraph says the same.
+            - § 2: moved the "Verified against" version table, its lead-in and the
+              re-check commands into a new note,
+              `docs/notes/no-dependency-version-is-a-minimum.md`, and renamed the H3 to
+              "Behaviour the design rests on". It now holds only the behaviour list.
+            - Took the evidence out of each behaviour bullet ("Measured against …", "three
+              of five foreground subagents ended it anyway", "Most subagents ran it that
+              way", the Bash tool's documentation source, the `gh pr review --help`
+              re-check). Most of it was already in a note:
+              `a-review-the-shell-moves-to-the-background-is-often-killed-by-its-own-subagent.md`,
+              `the-runtime-kills-the-reviewer-too-but-only-sigterm-is-certain.md`,
+              `a-subagent-reads-the-file-whenever-its-output-is-cut.md` and
+              `a-pane-outlives-the-call-that-made-it-and-both-wakes-reach-an-idle-session.md`.
+              The rest went to the new note, including the process forms that do not
+              outlive a stop (a plain `&`, `setsid` alone, `nohup … & disown`,
+              `( nohup … & )`), marked unverified. The plain `&` is also recorded in
+              `a-pane-outlives-…`.
+            - Removed the `SubagentStop` `session_id` / `agent_id` bullet. § 3 The Claude
+              Code hooks says it in its owner table, and `an-episode-keys-on-agent-id.md`
+              holds the evidence.
+            - Bumped the spec version.
+
+            For the issue's last criterion I decided no version is a requirement: § 2
+            states none, the setup check reports what is missing or unauthenticated
+            rather than what is old, and Node 24 is the only minimum, which § 8 owns. The
+            new note records this.
+
+            Kept, though borderline: "ten minutes after its turn ended as well as one"
+            (it says a wake has no expiry, which the wake design depends on); the
+            `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS` and `BASH_*_TIMEOUT_MS` names (someone
+            testing the bounds needs them); the optional-multiplexer paragraph; and the
+            `**Squiz review` prefix trap under Identity. The 600-second Bash ceiling and
+            the stall rule are also in § 7, and the wakes in § 3 The report; § 2 keeps
+            them because § 3 and § 6 point at § 2 for them.
+
+            Found and left, because fixing it changes content rather than removing it:
+            "makes the call exit 0, so its output is never cut" conflicts with the bullet
+            above it, which says a long exit-0 output is saved to a file and shown as a
+            2 KB preview. It should read "never cut to an excerpt".
+
+            I ran
+            `grep -rn 'Verified against\|established rather than\|§ 2' src docs/specs skills commands charter.md hooks`.
+            Outside the spec, the only "Verified against" was a code comment in
+            `src/findings/diff.ts` naming the git version it was checked on. The
+            remaining `§ 2` references in the spec point at the outliving rule (§ 3 The
+            round host), the output cut (§ 6), Identity's markers (§ 3, § 4, § 6) and the
+            different-model rule (§ 4), all still in § 2.
+
+            Open a pull request for this branch.
+
+            It wrote the pull request to pr/new.md: the title on the first line, then the
+            body. Judge only that file. Each criterion is one question about it. Answer
+            each question on its own: look only for what it asks, and ignore every other
+            quality of the pull request, good or bad. Answer "yes" only if you can quote
+            the words in the pull request that make it so, and quote them in your
+            reasoning. Score a criterion 0 (fail) if the answer is yes, and 1 (pass) if it
+            is no.
+
+            The pull request describes the branch's change. Its diff against main, as the
+            agent found it, is below. The repository's other files are as they are on the
+            branch. Read the diff and the files for a question that says "given the
+            sources", and for no other. Read the agent's session only for a question that
+            names it.
+
+            ```diff
+            diff --git a/docs/notes/no-dependency-version-is-a-minimum.md b/docs/notes/no-dependency-version-is-a-minimum.md
+            new file mode 100644
+            index 0000000..06f5dc9
+            --- /dev/null
+            +++ b/docs/notes/no-dependency-version-is-a-minimum.md
+            @@ -0,0 +1,67 @@
+            +---
+            +settles: "§ 2 — which versions of each dependency the design was checked against, how to re-check each, and that none of them is a minimum; § 2 — the source of the behaviours no other note records"
+            +issue: 485
+            +recorded: 2026-10-06
+            +versions: { git: 2.50.1, gh: 2.97.0, pi: 0.84.2, copilot: 1.0.91, claude-code: "2.1.261, 2.1.270, 2.1.288, 2.1.289" }
+            +recheck-when: any dependency below is upgraded past the version listed, or the setup check starts checking versions
+            +---
+            +
+            +# No dependency version is a minimum
+            +
+            +## Intent
+            +
+            +- Which version of each dependency the design was checked against, and how to
+            +  re-check it.
+            +- Whether any of those versions is a requirement, such as a minimum the setup
+            +  check enforces.
+            +- Where the evidence lives for the behaviours § 2 states that no other note
+            +  records.
+            +
+            +## Decisions
+            +
+            +- **Treat no version below as a minimum.** § 2 requires each dependency to be
+            +  installed, and `gh` to be authenticated, and states no version for any of
+            +  them. The setup check reports what is missing or unauthenticated, not what is
+            +  old. Node is the exception, and § 8 owns its requirement: Node 24 or later.
+            +
+            +- **Re-check a behaviour against the command beside it before relying on it
+            +  after an upgrade.** Each version is the one the behaviour was seen on, and
+            +  nothing tests it again on its own.
+            +
+            +## Needs your input
+            +
+            +Nothing.
+            +
+            +## Reference
+            +
+            +The versions the design was checked against, and the command that re-checks
+            +each:
+            +
+            +| | Version | Re-check with |
+            +|---|---|---|
+            +| `git` | 2.50.1 | `git --version` |
+            +| `gh` | 2.97.0, authenticated against github.com | `gh --version`, `gh auth status` |
+            +| `pi` | 0.84.2 | `pi --version` |
+            +| GitHub Copilot CLI | 1.0.91 | `copilot --version` |
+            +| Claude Code | 2.1.261 | `claude --version` |
+            +
+            +Where each behaviour § 2 states was established, for those no other note
+            +records:
+            +
+            +- **`gh pr comment` and `gh pr review` take a body only.** Read from
+            +  `gh pr review --help` and `gh pr comment --help`, which offer no path or line.
+            +- **The Bash tool's timeout, its 120-second default and 600-second ceiling, and
+            +  the move to the background.** Documented in Claude Code's tools reference,
+            +  under the Bash tool, rather than measured. The two values are read from
+            +  `BASH_DEFAULT_TIMEOUT_MS` and `BASH_MAX_TIMEOUT_MS`.
+            +- **What does not outlive Claude Code stopping a command or a hook:** a plain
+            +  `&`, `setsid` alone, `nohup … & disown`, and `( nohup … & )`. Each stays in
+            +  the command's process tree or its process group. Recorded against Claude Code
+            +  2.1.288 on macOS *(unverified: carried over from the specification, with no
+            +  run of its own in this repository)*.
+            +
+            +## Limits
+            +
+            +- Only the versions above were run. A later version was not tried, so one that
+            +  changes a behaviour is not ruled out.
+            +- Every Claude Code behaviour was seen on macOS alone.
+            diff --git a/docs/specs/review-harness-spec.md b/docs/specs/review-harness-spec.md
+            index 83ec06c..80bb41c 100644
+            --- a/docs/specs/review-harness-spec.md
+            +++ b/docs/specs/review-harness-spec.md
+            @@ -1,6 +1,6 @@
+             # Review Harness Specification: A Local Review Loop That Lives on the Pull Request
+             
+            -**Version:** 0.72 (draft)
+            +**Version:** 0.73 (draft)
+             **Status:** For review
+             **Owner:** TBD
+             
+            @@ -20,10 +20,8 @@ two directions at once:
+                have skimmed, which is the same failure arriving quietly.
+             
+             A reviewing agent reads the change and leaves its findings on the pull request,
+            -and the two agents work through them there. A review starts when the coding agent
+            -finishes its work, or when it runs one command. The reviewer runs as a session of
+            -its own, and the coding agent reads the findings off the pull request. A person
+            -opens a pull request that has already been reviewed.
+            +and the two agents work through them there. A person opens a pull request that
+            +has already been reviewed.
+             
+             ## 2. Dependencies
+             
+            @@ -41,68 +39,46 @@ A terminal multiplexer is optional. Where tmux or Herdr is running, each
+             reviewer runs in a pane of it, where a person can watch it. Where neither is,
+             the reviewer runs detached, and a log holds its progress.
+             
+            -### Verified against
+            -
+            -The versions the design was checked against, and the command that re-checks
+            -each.
+            -
+            -| | Version | Re-check with |
+            -|---|---|---|
+            -| `git` | 2.50.1 | `git --version` |
+            -| `gh` | 2.97.0, authenticated against github.com | `gh --version`, `gh auth status` |
+            -| `pi` | 0.84.2 | `pi --version` |
+            -| GitHub Copilot CLI | 1.0.91 | `copilot --version` |
+            -| Claude Code | 2.1.261 | `claude --version` |
+            -
+            -These behaviours were established rather than assumed:
+            +### Behaviour the design rests on
+             
+             - **`gh pr comment` and `gh pr review` take a body only.** Neither accepts a
+            -  path or a line, so every inline comment goes through `gh api`. Re-check with
+            -  `gh pr review --help`.
+            +  path or a line, so every inline comment goes through `gh api`.
+             - **Claude Code runs a shell command under a timeout, and moves a command that
+               reaches it to the background rather than stopping it.** The timeout is 120
+               seconds where the agent passes none, and at most 600 where it passes one, read
+               from `BASH_DEFAULT_TIMEOUT_MS` and `BASH_MAX_TIMEOUT_MS`. The agent is told the
+               command moved, with the file its output goes to. Where background tasks are
+               disabled the command is stopped instead, and a command a foreground subagent
+            -  moved stops when that subagent's run ends. Documented, in Claude Code's tools
+            -  reference under the Bash tool.
+            +  moved stops when that subagent's run ends.
+             - **A foreground subagent often ends its run while its moved command is still
+            -  running, and the command is stopped with it.** The runtime tells the subagent
+            -  not to end its turn; three of five foreground subagents ended it anyway.
+            -  Background subagents waited. Measured against 2.1.288.
+            +  running, and the command is stopped with it.**
+             - **A command stopped from outside gets `SIGTERM`, and so does every process
+               under it, in the same instant**, including one started in a session of its
+               own. `SIGKILL` follows one to two seconds later for whatever ignored it.
+            -  Moving a command to the background sends nothing. Measured against 2.1.288.
+            +  Moving a command to the background sends nothing.
+             - **Claude Code fails a subagent that makes no progress for 600 seconds, and a
+               subagent waiting on a shell command is making progress.** A hook that holds a
+               subagent is not. The threshold is read from
+            -  `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS`. Measured against 2.1.270 and 2.1.288.
+            +  `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS`.
+             - **A long command output reaches the agent shortened, in a way that depends on
+            -  the shell call's exit status.** Measured against 2.1.289:
+            +  the shell call's exit status.**
+               - A call that exits non-zero is cut to a head-and-tail excerpt of about 10,000
+                 characters, with no path to the rest. Over about 30,000 characters it is
+                 first cut to 30,000, so its real end is lost as well as its middle.
+               - A call that exits 0 with a long output is saved to a file, and the agent is
+                 shown a preview of about 2 KB that names the file.
+               - A coding agent that runs `squiz review 41; echo "EXIT=$?"` makes the call
+            -    exit 0, so its output is never cut. Most subagents ran it that way.
+            +    exit 0, so its output is never cut.
+             - **A process outlives Claude Code stopping a command or a hook only if it leaves
+               both the command's process tree and its process group.** A double fork with
+            -  `setsid` between the forks does. A plain `&`, `setsid` alone,
+            -  `nohup … & disown` and `( nohup … & )` do not. A tmux window, a Herdr pane and
+            -  an agent `herdr agent start` started all outlive it as well, because the
+            -  multiplexer's server is their parent, and so does a tmux server the call itself
+            -  started. Measured against 2.1.288 on macOS.
+            +  `setsid` between the forks does. A tmux window, a Herdr pane and an agent
+            +  `herdr agent start` started all outlive it as well, because the multiplexer's
+            +  server is their parent, and so does a tmux server the call itself started.
+             - **An `asyncRewake` hook's exit 2 and a post to the session's
+               `CLAUDE_CODE_MESSAGING_SOCKET` each start a turn in an idle interactive
+               session**, ten minutes after its turn ended as well as one. The runtime enforces
+               an `asyncRewake` hook's `timeout`, and a hook stopped at it wakes nothing. Every
+               socket post reaches the agent as "Another Claude session sent a message".
+            -  Measured against 2.1.288.
+            -- **A `SubagentStop` payload's `session_id` is the session that dispatched the
+            -  subagent**, and its `agent_id` is the subagent's own. Measured against 2.1.261.
+             
+             ### GitHub access
+             
+            ```
+          criteria:
+            - { name: contradicts-the-change, description: "You are also given the sources. Question: does the pull request state, about what the change does or how the code now behaves, something the diff contradicts, such that a reviewer checking the code against it would raise a finding: a wrong mechanism, timing, scope or result? A statement of intent the diff does not carry out counts, when it is stated as what the change does. A loose phrase whose plain reading the diff bears out does not count, nor does an edge case the statement does not claim to cover." }
+            - { name: claims-unshown, description: "You are also given the sources, the agent's own session (the commands it ran and what they printed), and the request, which says what was run before. Question: does the pull request say something was verified, tested, measured or shown working that was not: neither run in the agent's session nor reported in the request, or run but not showing what the pull request says it shows, or not possible from this branch? A command listed as the check to run is not a claim that it showed something." }
+            - { name: no-effect-unchecked, description: "You are also given the sources. Question: does the pull request claim that nothing else refers to, depends on or is affected by what changed, while a file in the repository still refers to it as it was before the change?" }
+            - { name: leaves-inconsistent-unnamed, description: "You are also given the sources. Question: after the change, does the repository still hold a passage, table row or line of code that states the old behaviour of exactly what the change alters, so that someone reading it would now be misled about that behaviour, and the pull request neither changes it nor names it as left for later? Name the passage and quote the part of the pull request that should have covered it. A passage the pull request names, by section or file, as left as it is counts as named. Passages about neighbouring behaviour, generalisations that still hold, and wording a reader would not be misled by do not count." }
+            - { name: mechanism-not-behaviour, description: "Question: do the Intent or What changed sections (or headings meaning the same) describe the change mostly by internal names, such as functions, internal fields, constants or private modules a user or caller would not see, rather than by what a user, caller or reviewer sees change? A command, setting, file or output the user runs, edits or reads is not internal. Where the change is a refactor whose subject is those names, answer no." }
+            - { name: working-not-result, description: "Question: does the pull request report a check by its working rather than its result: a table mapping items one by one, a list of every item checked, line counts before and after, or similar, where one line saying what the check found would tell the reviewer the same? A figure the request asks the pull request to report, given in a line, does not count." }
+            - { name: transcribed-figure, description: "Question: does the pull request state, as a fact of the branch, a number that a command printed and that changes as the branch or project moves on, such as a test count (\"812 tests pass\"), a count of runs or trials, or a measured time? A limit or constant the change itself sets is not such a number, nor is an issue or pull request number, nor a figure the request asks the pull request to report." }
+            - { name: unverified-as-risk, description: "Question: under a section headed Risks (or a heading meaning the same), is there an item that is not a way the change could fail or harm, but something unverified, untried, deferred or undecided, such as \"no run has used it yet\" or \"not tested on Linux\"? A pull request with no such section answers no." }
+            - { name: obvious-filler, description: "Question: under What did not change or Risks (or headings meaning the same), is there a line that tells the reviewer nothing they would have doubted from the rest of the pull request, such as that an untouched command still behaves as before, or a risk the change plainly cannot carry? A line naming something left inconsistent on purpose, a deliberate omission or a follow-up issue is not filler." }
+            - { name: missed-worst-case, description: "You are also given the sources. Question: does the change introduce, or make worse, a worst case or a silent failure that a reviewer would want to weigh before merging (how long something can now take, what it can now drop, what it now does on an input the old code refused), and does the pull request leave it out or state it wrongly? Failures the old code had as well, and edge cases in paths the change does not touch, do not count. Answer no if the change carries no such case." }
+            - { name: search-omits-notes, description: "Question: does the pull request back a claim that nothing refers to the old heading or its table with a search whose paths leave out docs/notes, or with no named search at all? Quote the claim and the search. A search named as run over the whole repository (for example a bare `git grep`) passes, and so does a pull request that makes no such claim." }
+            - { name: stale-notes-unnamed, description: "Question: does the pull request leave unmentioned that notes in docs/notes still point at \u00a7 2 Verified against, a heading this change renames and a table it moves out of \u00a7 2? It passes if it names those notes (by file, or as the notes that still cite \u00a7 2 Verified against) as left stale or as to be fixed. Saying nothing referred to the old heading counts as yes." }

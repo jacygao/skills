@@ -1,0 +1,309 @@
+# Expected: A body saying the Copilot CLI installs now survive a dropped HTTP/2 stream (curl exit 92), which curl's own `--retry` skips, and naming the downloads covered: Copilot CLI from npm (agents and judge), hve-core's archive and squiz's Node and squiz archives, with Part of #282. Its worst case says that a failure curl retries itself (a timeout, 408, 429 or 5xx) is now attempted 6 times on each of 5 tries, about 30 attempts and three and a half minutes of waiting, against about 30 seconds before, and that 50 seconds holds only for a failure curl does not retry. It describes the behaviour, not a function name, and does not claim Claude Code's install, which Harbor runs, is covered.
+name: writing-pull-requests-fetch-retry
+description: "A retry loop wrapped around a command that keeps its own retries, so the worst case is their product. From swe-drill #288: the body named `swe_drill.copilot.fetch()` and said a gone download \"now takes about 50 seconds longer to fail\", leaving out that curl's own `--retry 5` still runs inside each of the five tries."
+defaults:
+  runs: 3
+  timeout: 20m
+  judge_timeout: 10m
+  executor: copilot-sdk
+  model: claude-opus-5.5
+scoring:
+  threshold: 0.8
+  weights:
+    skill-invocation: 0
+    file-matches: 0.294118
+    panel: 0.705882
+agent_environment:
+  skills: [../../../skills/writing-pull-requests]
+  files: [{ src: workspace, dest: . }, { src: change.patch, dest: change.patch }]
+  commands: ["git init -q -b main && git add -A -- . ':!change.patch' ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Initial commit' && git checkout -q -b copilot/retry-downloads && git apply change.patch && rm change.patch && git add -A -- . ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Try a dropped download again in every install, which curl'\"'\"'s own --retry skips'"]
+stimuli:
+  - name: fetch-retry
+    prompt: |
+      Read AGENTS.md first.
+
+      In the senior check for #282 (`issues/282.md`), turborepo's reference fix
+      got no grade: the verifier's Copilot CLI download from npm failed with
+      `curl: (92) HTTP/2 stream 0 was not closed cleanly: INTERNAL_ERROR (err 2)`.
+      curl's `--retry 5` retries timeouts and some HTTP errors, not a dropped
+      stream, so it never tried again.
+
+      What I did on this branch:
+
+      - Added a shell function, `fetch <file> <url>`, that each install script
+        defines and downloads through. It runs curl as before and tries again on
+        any failure, 5 tries in all, pausing 5, 10, 15 and 20 seconds between
+        them. After the last try it fails with curl's exit code.
+      - Moved every download an install makes onto it: Copilot CLI from npm, which
+        the Copilot agents and the verifier's judge install, and whose binary the
+        senior validation agent uses; hve-core's archive; and squiz's Node and
+        squiz archives.
+      - New tests give the Copilot CLI install a stand-in curl that exits 92, as
+        the real one did: the install succeeds after 2 such failures, and fails
+        after the 5th.
+
+      `uv run pytest` passed. Before the change, the two new tests failed with
+      the same `NetworkConnectionError … exit 92` the senior check showed.
+
+      This is part of #282, not all of it.
+
+      Open a pull request for this branch.
+    graders:
+      - name: skill-loaded
+        type: skill-invocation
+        config: { required: [writing-pull-requests] }
+      - name: title-on-first-line
+        type: file-matches
+        config: { path: pr/new.md, pattern: "^# \\S", negate: false }
+      - name: headings-from-the-template
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## (?!(?:Intent|What changed|What did not change|Risks|Verification|Notes)\\s*$)", negate: true }
+      - name: headings-in-order
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## What changed\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## Intent\\s*$|^## Risks\\s*$[\\s\\S]*^## Intent\\s*$|^## Verification\\s*$[\\s\\S]*^## Intent\\s*$|^## Notes\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What changed\\s*$|^## Verification\\s*$[\\s\\S]*^## What changed\\s*$|^## Notes\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## What did not change\\s*$|^## Notes\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Verification\\s*$", negate: true }
+      - name: closes-in-intent
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## (?!Intent\\s*$)[^\\n]*\\n(?:(?!## )[^\\n]*\\n)*?[^\\n]*\\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\\d", negate: true }
+      - name: no-table
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^\\|[^\\n]*\\|[ \\t]*\\n\\|[ \\t:|-]*-{3,}", negate: true }
+      - name: judges
+        type: panel
+        config:
+          models: [gpt-6.2-astra]
+          aggregation: majority
+          scoring: binary
+          evidence: [{ source: repo, max_file_bytes: 200000 }, { source: trajectory }]
+          prompt: |
+            The agent was asked to open a GitHub pull request, with this request:
+
+            Read AGENTS.md first.
+
+            In the senior check for #282 (`issues/282.md`), turborepo's reference fix
+            got no grade: the verifier's Copilot CLI download from npm failed with
+            `curl: (92) HTTP/2 stream 0 was not closed cleanly: INTERNAL_ERROR (err 2)`.
+            curl's `--retry 5` retries timeouts and some HTTP errors, not a dropped
+            stream, so it never tried again.
+
+            What I did on this branch:
+
+            - Added a shell function, `fetch <file> <url>`, that each install script
+              defines and downloads through. It runs curl as before and tries again on
+              any failure, 5 tries in all, pausing 5, 10, 15 and 20 seconds between
+              them. After the last try it fails with curl's exit code.
+            - Moved every download an install makes onto it: Copilot CLI from npm, which
+              the Copilot agents and the verifier's judge install, and whose binary the
+              senior validation agent uses; hve-core's archive; and squiz's Node and
+              squiz archives.
+            - New tests give the Copilot CLI install a stand-in curl that exits 92, as
+              the real one did: the install succeeds after 2 such failures, and fails
+              after the 5th.
+
+            `uv run pytest` passed. Before the change, the two new tests failed with
+            the same `NetworkConnectionError … exit 92` the senior check showed.
+
+            This is part of #282, not all of it.
+
+            Open a pull request for this branch.
+
+            It wrote the pull request to pr/new.md: the title on the first line, then the
+            body. Judge only that file. Each criterion is one question about it. Answer
+            each question on its own: look only for what it asks, and ignore every other
+            quality of the pull request, good or bad. Answer "yes" only if you can quote
+            the words in the pull request that make it so, and quote them in your
+            reasoning. Score a criterion 0 (fail) if the answer is yes, and 1 (pass) if it
+            is no.
+
+            The pull request describes the branch's change. Its diff against main, as the
+            agent found it, is below. The repository's other files are as they are on the
+            branch. Read the diff and the files for a question that says "given the
+            sources", and for no other. Read the agent's session only for a question that
+            names it.
+
+            ```diff
+            diff --git a/src/swe_drill/agents/hve.py b/src/swe_drill/agents/hve.py
+            index 379459c..3ae26c6 100644
+            --- a/src/swe_drill/agents/hve.py
+            +++ b/src/swe_drill/agents/hve.py
+            @@ -8,6 +8,7 @@ from harbor.agents.installed.base import NonZeroAgentExitCodeError
+             from harbor.environments.base import BaseEnvironment
+             
+             from swe_drill.agents.copilot_cli import CopilotCli
+            +from swe_drill.copilot import fetch
+             
+             
+             RPI_AGENT = ".github/agents/hve-core/rpi-agent.agent.md"
+            @@ -62,8 +63,8 @@ class CopilotCliHve(CopilotCli):
+                     archive = f"https://codeload.github.com/microsoft/hve-core/tar.gz/{commit}"
+                     await self.exec_as_agent(
+                         environment,
+            -            "set -e; dir=$(mktemp -d); trap 'rm -rf \"$dir\"' EXIT; cd \"$dir\"; "
+            -            f"curl -fsSL -o hve-core.tar.gz {shlex.quote(archive)}; "
+            +            f"set -e; {fetch()}dir=$(mktemp -d); trap 'rm -rf \"$dir\"' EXIT; cd \"$dir\"; "
+            +            f"fetch hve-core.tar.gz {shlex.quote(archive)}; "
+                         "mkdir unpacked; tar -xzf hve-core.tar.gz -C unpacked; "
+                         f"test -f unpacked/{source}/plugin.json"
+                         f" || {{ echo 'the archive of hve-core {commit} holds no {source}/plugin.json'; exit 1; }}; "
+            diff --git a/src/swe_drill/agents/squiz.py b/src/swe_drill/agents/squiz.py
+            index 8f6bd5c..9548854 100644
+            --- a/src/swe_drill/agents/squiz.py
+            +++ b/src/swe_drill/agents/squiz.py
+            @@ -11,6 +11,7 @@ from harbor.models.agent.context import AgentContext
+             from swe_drill import judge
+             from swe_drill.agents import RECORD_NAME
+             from swe_drill.agents.copilot_cli import CopilotCli
+            +from swe_drill.copilot import fetch
+             
+             NODE_VERSION = "24.15.0"
+             # The sha256 of nodejs.org's archive of NODE_VERSION for each architecture, as its SHASUMS256.txt gives it.
+            @@ -114,13 +115,13 @@ class CopilotCliSquiz(CopilotCli):
+                     checksums = " ".join(f"{arch}) want={digest};;" for arch, digest in NODE_SHA256.items())
+                     await self.exec_as_agent(
+                         environment,
+            -            "set -e; fail() { echo \"$1\"; exit 1; }; "
+            +            f"set -e; {fetch()}fail() {{ echo \"$1\"; exit 1; }}; "
+                         'case "$(uname -m)" in x86_64|amd64) arch=x64;; aarch64|arm64) arch=arm64;; '
+                         '*) fail "nodejs.org builds no Node for $(uname -m)";; esac; '
+                         "if ls /lib/ld-musl-* >/dev/null 2>&1; then fail 'nodejs.org builds no Node for musl'; fi; "
+                         f'case "$arch" in {checksums} *) fail "no checksum is pinned for Node on $arch";; esac; '
+                         "dir=$(mktemp -d); trap 'rm -rf \"$dir\"' EXIT; cd \"$dir\"; "
+            -            "curl -fsSL --retry 5 -o node.tar.gz"
+            +            "fetch node.tar.gz"
+                         f' "https://nodejs.org/dist/v{NODE_VERSION}/node-v{NODE_VERSION}-linux-$arch.tar.gz"; '
+                         "sum=$(sha256sum node.tar.gz | cut -d ' ' -f 1); "
+                         f'[ "$sum" = "$want" ] || fail "the archive of Node {NODE_VERSION} has checksum $sum, not $want"; '
+            @@ -133,8 +134,8 @@ class CopilotCliSquiz(CopilotCli):
+                     shim = f'#!/bin/sh\nexec {shlex.quote(node + "/bin/node")} {shlex.quote(plugin + "/src/cli.ts")} "$@"\n'
+                     installed = await self.exec_as_agent(
+                         environment,
+            -            "set -e; dir=$(mktemp -d); trap 'rm -rf \"$dir\"' EXIT; cd \"$dir\"; "
+            -            f"curl -fsSL --retry 5 -o squiz.tar.gz {shlex.quote(archive)}; "
+            +            f"set -e; {fetch()}dir=$(mktemp -d); trap 'rm -rf \"$dir\"' EXIT; cd \"$dir\"; "
+            +            f"fetch squiz.tar.gz {shlex.quote(archive)}; "
+                         "mkdir unpacked; tar -xzf squiz.tar.gz -C unpacked; "
+                         f"{{ test -f unpacked/{source}/hooks/hooks.json && test -f unpacked/{source}/src/cli.ts; }}"
+                         f" || {{ echo 'the archive of squiz {self.squiz_version} holds no {source}/hooks/hooks.json"
+            diff --git a/src/swe_drill/copilot.py b/src/swe_drill/copilot.py
+            index 128668a..a27f8c7 100644
+            --- a/src/swe_drill/copilot.py
+            +++ b/src/swe_drill/copilot.py
+            @@ -6,6 +6,23 @@ from typing import Any, ClassVar
+             from harbor.agents.installed.copilot_cli import CopilotCli
+             from harbor.environments.base import BaseEnvironment
+             
+            +# How many times `fetch` tries a download, and how much longer it waits after each failed try.
+            +FETCH_TRIES = 5
+            +FETCH_PAUSE_SECONDS = 5
+            +
+            +
+            +def fetch() -> str:
+            +    """
+            +    A shell function, `fetch <file> <url>`, that downloads with curl and tries
+            +    again on any failure, FETCH_TRIES times in all. curl's own --retry skips a
+            +    dropped connection, which is how a download most often fails.
+            +    """
+            +    return (
+            +        "fetch() { tries=1; until curl -fsSL --retry 5 -o \"$1\" \"$2\"; do code=$?;"
+            +        f' [ "$tries" -lt {FETCH_TRIES} ] || return "$code"; rm -f "$1";'
+            +        f' sleep "$((tries * {FETCH_PAUSE_SECONDS}))"; tries=$((tries + 1)); done; }}; '
+            +    )
+            +
+             
+             class NpmCopilotCli(CopilotCli):
+                 """
+            @@ -36,13 +53,13 @@ class NpmCopilotCli(CopilotCli):
+                     await self.exec_as_agent(
+                         environment,
+                         command=(
+            -                "set -euo pipefail; "
+            +                f"set -euo pipefail; {fetch()}"
+                             'case "$(uname -m)" in x86_64|amd64) arch=x64;; aarch64|arm64) arch=arm64;; '
+                             '*) echo "no Copilot CLI build for $(uname -m)"; exit 1;; esac; '
+                             "libc=linux; if ls /lib/ld-musl-* >/dev/null 2>&1; then libc=linuxmusl; fi; "
+                             'package="copilot-$libc-$arch"; '
+                             "dir=$(mktemp -d); trap 'rm -rf \"$dir\"' EXIT; "
+            -                'curl -fsSL --retry 5 -o "$dir/copilot.tgz" '
+            +                'fetch "$dir/copilot.tgz" '
+                             f'"https://registry.npmjs.org/@github/$package/-/$package-{version}.tgz"; '
+                             'tar -xzf "$dir/copilot.tgz" -C "$dir"; '
+                             'mkdir -p "$HOME/.local/bin"; install -m 755 "$dir/package/copilot" "$HOME/.local/bin/copilot"; '
+            diff --git a/tests/test_copilot_agents.py b/tests/test_copilot_agents.py
+            index 0ff21f4..0663b6e 100644
+            --- a/tests/test_copilot_agents.py
+            +++ b/tests/test_copilot_agents.py
+            @@ -31,6 +31,7 @@ from swe_drill.agents import squiz as squiz_agent_module
+             from swe_drill.agents.hve import CopilotCliHve, full_auto_prompt
+             from swe_drill.agents.squiz import CopilotCliSquiz
+             from swe_drill.config import ConfigError
+            +from swe_drill import copilot as copilot_module
+             from swe_drill.copilot import NpmCopilotCli
+             
+             TOKEN = "github_pat_from_the_env_file"
+            @@ -341,6 +342,53 @@ def hve(box: Path, **kwargs) -> CopilotCliHve:
+                 return agent(box, CopilotCliHve, hve_core_commit=COMMIT, reasoning_effort="high", **kwargs)
+             
+             
+            +# Fails as curl does on a dropped HTTP/2 stream, which its own --retry never retries, FAILS times first.
+            +FLAKY_CURL = """#!/bin/sh
+            +here=$(dirname "$0")
+            +failed=$(cat "$here/curl.failed" 2>/dev/null || echo 0)
+            +if [ "$failed" -lt FAILS ]; then
+            +    echo $((failed + 1)) > "$here/curl.failed"
+            +    echo "curl: (92) HTTP/2 stream 0 was not closed cleanly: INTERNAL_ERROR (err 2)" >&2
+            +    exit 92
+            +fi
+            +""" + CURL.split("\n", 1)[1]
+            +
+            +
+            +def npm_copilot(box: Path) -> Path:
+            +    package = box / "npm" / "package"
+            +    package.mkdir(parents=True)
+            +    (package / "copilot").write_text("#!/bin/sh\necho 'GitHub Copilot CLI 1.0.105.'\n")
+            +    (package / "copilot").chmod(0o755)
+            +    with tarfile.open(bin_dir(box) / "hve-core.tar.gz", "w:gz") as archive:
+            +        archive.add(package, arcname="package")
+            +    return package
+            +
+            +
+            +def flaky_curl(box: Path, monkeypatch, fails: int) -> None:
+            +    (bin_dir(box) / "curl").write_text(FLAKY_CURL.replace("FAILS", str(fails)))
+            +    monkeypatch.setattr(copilot_module, "FETCH_PAUSE_SECONDS", 0)
+            +
+            +
+            +def test_copilot_cli_installs_through_a_dropped_download_282(box, local_environment, monkeypatch):
+            +    package = npm_copilot(box)
+            +    flaky_curl(box, monkeypatch, fails=2)
+            +
+            +    go(INSTALL(agent(box), local_environment))
+            +
+            +    assert (bin_dir(box) / "copilot").read_text() == (package / "copilot").read_text()
+            +    assert (bin_dir(box) / "curl.failed").read_text().strip() == "2"
+            +
+            +
+            +def test_copilot_cli_install_fails_once_every_download_try_fails(box, local_environment, monkeypatch):
+            +    npm_copilot(box)
+            +    flaky_curl(box, monkeypatch, fails=99)
+            +
+            +    with pytest.raises(Exception, match="exit 92"):
+            +        go(INSTALL(agent(box), local_environment))
+            +
+            +    assert (bin_dir(box) / "curl.failed").read_text().strip() == str(copilot_module.FETCH_TRIES)
+            +
+            +
+             def test_copilot_cli_is_installed_from_npms_registry_not_githubs_releases(box, local_environment):
+                 package = box / "npm" / "package"
+                 package.mkdir(parents=True)
+            ```
+          criteria:
+            - { name: contradicts-the-change, description: "You are also given the sources. Question: does the pull request state, about what the change does or how the code now behaves, something the diff contradicts, such that a reviewer checking the code against it would raise a finding: a wrong mechanism, timing, scope or result? A statement of intent the diff does not carry out counts, when it is stated as what the change does. A loose phrase whose plain reading the diff bears out does not count, nor does an edge case the statement does not claim to cover." }
+            - { name: claims-unshown, description: "You are also given the sources, the agent's own session (the commands it ran and what they printed), and the request, which says what was run before. Question: does the pull request say something was verified, tested, measured or shown working that was not: neither run in the agent's session nor reported in the request, or run but not showing what the pull request says it shows, or not possible from this branch? A command listed as the check to run is not a claim that it showed something." }
+            - { name: no-effect-unchecked, description: "You are also given the sources. Question: does the pull request claim that nothing else refers to, depends on or is affected by what changed, while a file in the repository still refers to it as it was before the change?" }
+            - { name: leaves-inconsistent-unnamed, description: "You are also given the sources. Question: after the change, does the repository still hold a passage, table row or line of code that states the old behaviour of exactly what the change alters, so that someone reading it would now be misled about that behaviour, and the pull request neither changes it nor names it as left for later? Name the passage and quote the part of the pull request that should have covered it. A passage the pull request names, by section or file, as left as it is counts as named. Passages about neighbouring behaviour, generalisations that still hold, and wording a reader would not be misled by do not count." }
+            - { name: mechanism-not-behaviour, description: "Question: do the Intent or What changed sections (or headings meaning the same) describe the change mostly by internal names, such as functions, internal fields, constants or private modules a user or caller would not see, rather than by what a user, caller or reviewer sees change? A command, setting, file or output the user runs, edits or reads is not internal. Where the change is a refactor whose subject is those names, answer no." }
+            - { name: working-not-result, description: "Question: does the pull request report a check by its working rather than its result: a table mapping items one by one, a list of every item checked, line counts before and after, or similar, where one line saying what the check found would tell the reviewer the same? A figure the request asks the pull request to report, given in a line, does not count." }
+            - { name: transcribed-figure, description: "Question: does the pull request state, as a fact of the branch, a number that a command printed and that changes as the branch or project moves on, such as a test count (\"812 tests pass\"), a count of runs or trials, or a measured time? A limit or constant the change itself sets is not such a number, nor is an issue or pull request number, nor a figure the request asks the pull request to report." }
+            - { name: unverified-as-risk, description: "Question: under a section headed Risks (or a heading meaning the same), is there an item that is not a way the change could fail or harm, but something unverified, untried, deferred or undecided, such as \"no run has used it yet\" or \"not tested on Linux\"? A pull request with no such section answers no." }
+            - { name: obvious-filler, description: "Question: under What did not change or Risks (or headings meaning the same), is there a line that tells the reviewer nothing they would have doubted from the rest of the pull request, such as that an untouched command still behaves as before, or a risk the change plainly cannot carry? A line naming something left inconsistent on purpose, a deliberate omission or a follow-up issue is not filler." }
+            - { name: missed-worst-case, description: "You are also given the sources. Question: does the change introduce, or make worse, a worst case or a silent failure that a reviewer would want to weigh before merging (how long something can now take, what it can now drop, what it now does on an input the old code refused), and does the pull request leave it out or state it wrongly? Failures the old code had as well, and edge cases in paths the change does not touch, do not count. Answer no if the change carries no such case." }
+            - { name: retry-worst-case-understated, description: "You are also given the sources. Question: given the diff, curl's own `--retry 5` still runs inside each of the five tries, so a failure curl retries itself (a timeout, or HTTP 408, 429 or 5xx) is now attempted 6 times on each try, up to 30 attempts with about three and a half minutes of waiting, against 6 attempts and about 30 seconds before. Does the pull request leave this compounded case out, or give a smaller figure (such as about 50 seconds longer) as how long a failing download can now take? A body that states the compounded case answers no, whatever it says of failures curl does not retry." }
+            - { name: every-install-overclaimed, description: "You are also given the sources. Question: does the pull request, title included, say that every install, or every download an install makes, now tries again, without excepting Claude Code's install, which Harbor's own agent runs from its bootstrap script and the diff does not touch? Naming the downloads that are covered, with no claim about all of them, answers no." }

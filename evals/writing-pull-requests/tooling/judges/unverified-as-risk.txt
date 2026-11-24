@@ -1,0 +1,1 @@
+Question: under a section headed Risks (or a heading meaning the same), is there an item that is not a way the change could fail or harm, but something unverified, untried, deferred or undecided, such as "no run has used it yet" or "not tested on Linux"? A pull request with no such section answers no.
