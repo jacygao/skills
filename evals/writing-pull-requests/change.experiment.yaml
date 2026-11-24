@@ -1,0 +1,12 @@
+# This branch's writing-pull-requests against main's. Extract main's first:
+#   mkdir -p ../results/baseline-skills && git -C ../.. archive main skills/writing-pull-requests | tar -x -C ../results/baseline-skills
+# then: vally experiment run change.experiment.yaml
+name: writing-pull-requests-change
+evals: ["*/eval.yaml"]
+vary: ["/environment/skills"]
+baseline: main
+variants:
+  branch: {}
+  main:
+    environment:
+      skills: [../results/baseline-skills/skills/writing-pull-requests]

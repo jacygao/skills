@@ -1,0 +1,82 @@
+# The case. It starts from ../../heading-rename/workspace/.
+description: >
+  A spec cleanup that renames a heading and moves its table into a note, while
+  other files still point at both. From squiz #503: the body said "Nothing
+  referred to the old heading", and its grep left out docs/notes, where four
+  notes still pointed at § 2 Verified against.
+expected_outcome: >
+  A body listing each removed passage by kind and where it went, the
+  no-minimum-version decision, and the passages kept or left on purpose. It
+  either fixes the four notes that still name § 2 Verified against
+  (a-subagent-reads-the-file-whenever-its-output-is-cut, the-deep-grant-does-not-confine,
+  cost-arrives-during-a-run, githubs-diff-is-git-diff-byte-for-byte) or names
+  them as left pointing at a heading and table that are gone. Any claim that
+  nothing else refers to the heading names a search over the whole
+  repository. No line counts and no version arrow.
+branch: spec/cleanup-485
+commit: Remove from spec § 1 and § 2 what the specification does not need
+prompt: |
+  Read AGENTS.md first.
+
+  This branch does #485 for § 1 Purpose and § 2 Dependencies only. Seven other
+  cleanup issues are editing the other sections in parallel, and each bumps the
+  spec version too.
+
+  What I did:
+
+  - § 1: removed the sentences on how a review starts and where the reviewer
+    runs. § 3's opening paragraph says the same.
+  - § 2: moved the "Verified against" version table, its lead-in and the
+    re-check commands into a new note,
+    `docs/notes/no-dependency-version-is-a-minimum.md`, and renamed the H3 to
+    "Behaviour the design rests on". It now holds only the behaviour list.
+  - Took the evidence out of each behaviour bullet ("Measured against …", "three
+    of five foreground subagents ended it anyway", "Most subagents ran it that
+    way", the Bash tool's documentation source, the `gh pr review --help`
+    re-check). Most of it was already in a note:
+    `a-review-the-shell-moves-to-the-background-is-often-killed-by-its-own-subagent.md`,
+    `the-runtime-kills-the-reviewer-too-but-only-sigterm-is-certain.md`,
+    `a-subagent-reads-the-file-whenever-its-output-is-cut.md` and
+    `a-pane-outlives-the-call-that-made-it-and-both-wakes-reach-an-idle-session.md`.
+    The rest went to the new note, including the process forms that do not
+    outlive a stop (a plain `&`, `setsid` alone, `nohup … & disown`,
+    `( nohup … & )`), marked unverified. The plain `&` is also recorded in
+    `a-pane-outlives-…`.
+  - Removed the `SubagentStop` `session_id` / `agent_id` bullet. § 3 The Claude
+    Code hooks says it in its owner table, and `an-episode-keys-on-agent-id.md`
+    holds the evidence.
+  - Bumped the spec version.
+
+  For the issue's last criterion I decided no version is a requirement: § 2
+  states none, the setup check reports what is missing or unauthenticated
+  rather than what is old, and Node 24 is the only minimum, which § 8 owns. The
+  new note records this.
+
+  Kept, though borderline: "ten minutes after its turn ended as well as one"
+  (it says a wake has no expiry, which the wake design depends on); the
+  `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS` and `BASH_*_TIMEOUT_MS` names (someone
+  testing the bounds needs them); the optional-multiplexer paragraph; and the
+  `**Squiz review` prefix trap under Identity. The 600-second Bash ceiling and
+  the stall rule are also in § 7, and the wakes in § 3 The report; § 2 keeps
+  them because § 3 and § 6 point at § 2 for them.
+
+  Found and left, because fixing it changes content rather than removing it:
+  "makes the call exit 0, so its output is never cut" conflicts with the bullet
+  above it, which says a long exit-0 output is saved to a file and shown as a
+  2 KB preview. It should read "never cut to an excerpt".
+
+  I ran
+  `grep -rn 'Verified against\|established rather than\|§ 2' src docs/specs skills commands charter.md hooks`.
+  Outside the spec, the only "Verified against" was a code comment in
+  `src/findings/diff.ts` naming the git version it was checked on. The
+  remaining `§ 2` references in the spec point at the outliving rule (§ 3 The
+  round host), the output cut (§ 6), Identity's markers (§ 3, § 4, § 6) and the
+  different-model rule (§ 4), all still in § 2.
+
+  Open a pull request for this branch.
+criteria:
+  - name: search-omits-notes
+    description: "Question: does the pull request back a claim that nothing refers to the old heading or its table with a search whose paths leave out docs/notes, or with no named search at all? Quote the claim and the search. A search named as run over the whole repository (for example a bare `git grep`) passes, and so does a pull request that makes no such claim."
+  - name: stale-notes-unnamed
+    description: "Question: does the pull request leave unmentioned that notes in docs/notes still point at § 2 Verified against, a heading this change renames and a table it moves out of § 2? It passes if it names those notes (by file, or as the notes that still cite § 2 Verified against) as left stale or as to be fixed. Saying nothing referred to the old heading counts as yes."
+tables_ok: false

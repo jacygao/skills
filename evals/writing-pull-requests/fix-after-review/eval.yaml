@@ -1,0 +1,244 @@
+# Expected: pr/251.md rewritten in place: Intent names only `squiz threads` and `squiz reply`, and the Decisions bullet says what the fix made it say, that an install lets the binary be found by name, not which commands it dispatches. No "Updated after review" section, no account of the finding or of what the body said before, no test count, and the rest of the body left as true as it was.
+name: writing-pull-requests-fix-after-review
+description: "An update case: a review finding is fixed in a second commit, and the open pull request's body must be brought up to the new head. From squiz #251: the body named `squiz resolve` and a decision the fix commit rewrote, and the reviewer asked for the description to be corrected as well as the note."
+defaults:
+  runs: 3
+  timeout: 20m
+  judge_timeout: 10m
+  executor: copilot-sdk
+  model: claude-opus-5.5
+scoring:
+  threshold: 0.8
+  weights:
+    skill-invocation: 0
+    file-matches: 0.294118
+    panel: 0.705882
+agent_environment:
+  skills: [../../../skills/writing-pull-requests]
+  files: [{ src: workspace, dest: . }, { src: change.patch, dest: change.patch }, { src: fix.patch, dest: fix.patch }]
+  commands: ["git init -q -b main && git add -A -- . ':!change.patch' ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Initial commit' && git checkout -q -b notes/install-puts-bin-on-path && git apply change.patch && rm change.patch && git add -A -- . ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Record that a marketplace install reaches the Bash tool'\"'\"'s PATH and the hook' && git apply fix.patch && rm fix.patch && git add -A && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Name the commands squiz has, not one it does not'"]
+stimuli:
+  - name: fix-after-review
+    prompt: |
+      Read AGENTS.md first.
+
+      This branch is #251. It records in
+      `docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md` what a
+      marketplace install does, for #54: I installed squiz at `local` scope from
+      the repository as its own marketplace, ran one subagent in a new session
+      with no `--plugin-dir`, and read the stream with `--include-hook-events
+      --output-format stream-json --verbose` plus `--debug-file`. The Bash tool's
+      `PATH` held the plugin's `bin/`, and the `SubagentStop` hook ran and exited 0.
+      I removed the install, the marketplace and the `.claude/settings.local.json`
+      it created afterwards. `pr/251.md` is the pull request as I opened it.
+
+      The reviewer opened one thread on the note, at the first commit:
+
+      > **[P3] Remove the nonexistent `squiz resolve` command from the new
+      > decision.** Current § 6 lists `hook`, `threads`, and `reply`, and
+      > `src/cli.ts` dispatches only those names. Running `squiz resolve` reaches
+      > the unknown-command path (`no command "resolve". The commands are: hook,
+      > threads, reply`). #54's older wording still mentioned resolve, but copying
+      > it into a new present-tense finding incorrectly says § 6 asks the coding
+      > agent to run it and that installation makes it usable. `command -v squiz`
+      > establishes lookup of the binary, not availability of arbitrary
+      > subcommands. Name the current `threads` and `reply` commands here and in
+      > the PR description; this does not require adding a resolve command.
+
+      It was right: `src/cli.ts` has `const commands = ["hook", "threads",
+      "reply"]`, and the name came from #54's wording. I pushed a second commit,
+      "Name the commands squiz has, not one it does not", which rewrites that
+      Decisions bullet, and replied on the thread. I left #54's own body as it is,
+      since the issue is a record of what was asked. `npx tsc --noEmit` is still
+      clean; no source file changed.
+
+      Update the pull request's description for the new head.
+    graders:
+      - name: skill-loaded
+        type: skill-invocation
+        config: { required: [writing-pull-requests] }
+      - name: title-on-first-line
+        type: file-matches
+        config: { path: pr/251.md, pattern: "^# \\S", negate: false }
+      - name: headings-from-the-template
+        type: file-matches
+        config: { path: pr/251.md, pattern: "(?m)^## (?!(?:Intent|What changed|What did not change|Risks|Verification|Notes)\\s*$)", negate: true }
+      - name: headings-in-order
+        type: file-matches
+        config: { path: pr/251.md, pattern: "(?m)^## What changed\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## Intent\\s*$|^## Risks\\s*$[\\s\\S]*^## Intent\\s*$|^## Verification\\s*$[\\s\\S]*^## Intent\\s*$|^## Notes\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What changed\\s*$|^## Verification\\s*$[\\s\\S]*^## What changed\\s*$|^## Notes\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## What did not change\\s*$|^## Notes\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Verification\\s*$", negate: true }
+      - name: closes-in-intent
+        type: file-matches
+        config: { path: pr/251.md, pattern: "(?m)(?:(?<![\\s\\S])|^## (?!Intent\\s*$)[^\\n]*\\n)(?:(?!## )[^\\n]*\\n)*?[^\\n]*\\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\\d", negate: true }
+      - name: no-table
+        type: file-matches
+        config: { path: pr/251.md, pattern: "(?m)^ {0,3}[^\\n]*\\|[^\\n]*\\n {0,3}(?=[^\\n]*\\|)\\|?[ \\t]*:?-+:?[ \\t]*(?:\\|[ \\t]*:?-+:?[ \\t]*)*\\|?[ \\t]*$", negate: true }
+      - name: judges
+        type: panel
+        config:
+          models: [gpt-6.2-astra]
+          aggregation: majority
+          scoring: binary
+          evidence: [{ source: repo, max_file_bytes: 200000 }, { source: trajectory }]
+          prompt: |
+            The agent was asked to open a GitHub pull request, with this request:
+
+            Read AGENTS.md first.
+
+            This branch is #251. It records in
+            `docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md` what a
+            marketplace install does, for #54: I installed squiz at `local` scope from
+            the repository as its own marketplace, ran one subagent in a new session
+            with no `--plugin-dir`, and read the stream with `--include-hook-events
+            --output-format stream-json --verbose` plus `--debug-file`. The Bash tool's
+            `PATH` held the plugin's `bin/`, and the `SubagentStop` hook ran and exited 0.
+            I removed the install, the marketplace and the `.claude/settings.local.json`
+            it created afterwards. `pr/251.md` is the pull request as I opened it.
+
+            The reviewer opened one thread on the note, at the first commit:
+
+            > **[P3] Remove the nonexistent `squiz resolve` command from the new
+            > decision.** Current § 6 lists `hook`, `threads`, and `reply`, and
+            > `src/cli.ts` dispatches only those names. Running `squiz resolve` reaches
+            > the unknown-command path (`no command "resolve". The commands are: hook,
+            > threads, reply`). #54's older wording still mentioned resolve, but copying
+            > it into a new present-tense finding incorrectly says § 6 asks the coding
+            > agent to run it and that installation makes it usable. `command -v squiz`
+            > establishes lookup of the binary, not availability of arbitrary
+            > subcommands. Name the current `threads` and `reply` commands here and in
+            > the PR description; this does not require adding a resolve command.
+
+            It was right: `src/cli.ts` has `const commands = ["hook", "threads",
+            "reply"]`, and the name came from #54's wording. I pushed a second commit,
+            "Name the commands squiz has, not one it does not", which rewrites that
+            Decisions bullet, and replied on the thread. I left #54's own body as it is,
+            since the issue is a record of what was asked. `npx tsc --noEmit` is still
+            clean; no source file changed.
+
+            Update the pull request's description for the new head.
+
+            It wrote the pull request to pr/251.md: the title on the first line, then the
+            body. Judge only that file. Each criterion is one question about it. Answer
+            each question on its own: look only for what it asks, and ignore every other
+            quality of the pull request, good or bad. Answer "yes" only if you can quote
+            the words in the pull request that make it so, and quote them in your
+            reasoning. Score a criterion 0 (fail) if the answer is yes, and 1 (pass) if it
+            is no.
+
+            The pull request describes the branch's change. Its diff against main, as the
+            agent found it, is below. The repository's other files are as they are on the
+            branch. Read the diff and the files for a question that says "given the
+            sources", and for no other. Read the agent's session only for a question that
+            names it.
+
+            ```diff
+            diff --git a/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md b/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md
+            index a1b41ed..7d3bb42 100644
+            --- a/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md
+            +++ b/docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md
+            @@ -1,8 +1,8 @@
+             ---
+            -settles: "§ 6 — whether the SubagentStop registration can name the `squiz` binary directly"
+            -issue: 39
+            +settles: "§ 6 — whether the SubagentStop registration can name the `squiz` binary directly; § 9 — whether a marketplace install puts the plugin's bin/ on the Bash tool's PATH"
+            +issue: 39, 54
+             recorded: 2026-09-09
+            -versions: { claude-code: 2.1.263, node: 24.15.0 }
+            +versions: { claude-code: 2.1.263 and 2.1.285, node: 24.15.0 }
+             recheck-when: Claude Code changes how a plugin's bin/ reaches PATH
+             ---
+             
+            @@ -25,6 +25,11 @@ exited 0.
+               nothing to say.** Both leave an empty transcript. Nothing about the plugin
+               loading says the command will run, so the two are told apart by the exit code
+               in the event stream rather than by output.
+            +- **The name the coding agent runs resolves under an install as it does under
+            +  `--plugin-dir`.** An install puts the plugin's `bin/` on the Bash tool's `PATH`,
+            +  so `squiz threads` and `squiz reply` find the binary either way. What was
+            +  established is the lookup of `squiz` itself; which commands it dispatches is its
+            +  own question and nothing here measures it.
+             
+             ## Needs your input
+             
+            @@ -70,16 +75,60 @@ exist produce the same nothing in a transcript. Two flags separate them:
+               logs the hook's error line. A plugin that failed to load is told apart from a
+               hook that never fired here.
+             
+            +### Under a marketplace install
+            +
+            +An install reaches the same two places as `--plugin-dir`, and needs no
+            +interactive session to set up. The marketplace takes a path, so the repository is
+            +its own marketplace while one is being tested:
+            +
+            +```
+            +claude plugin marketplace add <repository> --scope local
+            +claude plugin install squiz@<marketplace> --scope local
+            +```
+            +
+            +Both want a `.claude-plugin/marketplace.json` naming the plugin with
+            +`"source": "./"`. `claude plugin list` reads the install back, and
+            +`claude plugin uninstall` and `claude plugin marketplace remove` undo it.
+            +
+            +In a session started after that install, with no `--plugin-dir`:
+            +
+            +- **The Bash tool's `PATH` held the plugin's `bin/`.** `command -v squiz`
+            +  resolved to it, and the entry sat 16th. The entries before it were the user's
+            +  own.
+            +- **The `SubagentStop` hook ran and exited 0**, so `$${CLAUDE_PLUGIN_ROOT}`
+            +  resolves under an install as it does under `--plugin-dir`. The stream carried:
+            +
+            +  ```json
+            +  {"subtype":"hook_started","hook_name":"SubagentStop","hook_event":"SubagentStop"}
+            +  {"subtype":"hook_response","hook_name":"SubagentStop","stdout":"","stderr":"","exit_code":0,"outcome":"success"}
+            +  ```
+            +
+            +  Both streams empty and the exit 0 are what say the path resolved: a
+            +  `CLAUDE_PLUGIN_ROOT` that did not expand gives 127 and the shell's message on
+            +  `stderr`, which is the failing registration recorded above.
+            +
+            +- **`--debug-file` recorded the load**: `Read hooks.json for plugin squiz
+            +  (enabled=true)`, `Loading hooks from plugin: squiz`, then `Registered 1 hooks
+            +  from 2 plugins` — the second being a built-in.
+            +
+            +**Print mode fires `SubagentStop`.** An earlier attempt to see it with `--debug`
+            +and a hook rewritten to leave a file behind observed nothing and read that as
+            +print mode running no hook at all. That was the wrong instrument rather than a
+            +finding: `--include-hook-events` with `--output-format stream-json --verbose` is
+            +what puts the firing in the stream, and it was there.
+            +
+             ## Limits
+             
+            -- **Only an inline plugin, loaded with `--plugin-dir`.** Whether a plugin
+            -  installed from a marketplace puts its `bin/` on the hook's `PATH` was not
+            -  tested, and nothing here says the two are the same.
+            -- **Where the plugin's `bin/` sits in the Bash tool's `PATH` was not
+            -  recorded**, only that `command -v squiz` found it there. The first two entries
+            -  were the user's own.
+            +- **The install was from a directory, not from a git host.** The marketplace
+            +  source was the repository, so the plugin that ran was the repository and the
+            +  `PATH` entry was its own `bin/`. An install from a remote marketplace copies
+            +  the plugin elsewhere, and the entry would be that copy's `bin/`. What was
+            +  established is that an install extends the Bash tool's `PATH` with the plugin's
+            +  `bin/`, not the literal path it extends it with.
+            +- **The install was declared at `local` scope.** Whether `user` scope resolves
+            +  `CLAUDE_PLUGIN_ROOT` differently was not tested.
+             - **Whether `$${CLAUDE_PLUGIN_ROOT}` is expanded by the runtime or by the shell
+               it runs the command under was not distinguished.** Both would work for this
+               registration; a command that quoted it differently might not.
+            -- **One machine, one Claude Code version, print mode, one subagent per run,
+            -  `claude-sonnet-5`.** Three runs on macOS.
+            +- **One machine, print mode, one subagent per run, `claude-sonnet-5`.** Three
+            +  runs on macOS for the `--plugin-dir` findings and one for the install.
+            ```
+          criteria:
+            - { name: contradicts-the-change, description: "You are also given the sources. Question: does the pull request state, about what the change does or how the code now behaves, something the diff contradicts, such that a reviewer checking the code against it would raise a finding: a wrong mechanism, timing, scope or result? A statement of intent the diff does not carry out counts, when it is stated as what the change does. A loose phrase whose plain reading the diff bears out does not count, nor does an edge case the statement does not claim to cover." }
+            - { name: claims-unshown, description: "You are also given the sources, the agent's own session (the commands it ran and what they printed), and the request, which says what was run before. Question: does the pull request say something was verified, tested, measured or shown working that was not: neither run in the agent's session nor reported in the request, or run but not showing what the pull request says it shows, or not possible from this branch? A command listed as the check to run is not a claim that it showed something." }
+            - { name: no-effect-unchecked, description: "You are also given the sources. Question: does the pull request claim that nothing else refers to, depends on or is affected by what changed, while a file in the repository still refers to it as it was before the change?" }
+            - { name: leaves-inconsistent-unnamed, description: "You are also given the sources. Question: after the change, does the repository still hold a passage, table row or line of code that states the old behaviour of exactly what the change alters, so that someone reading it would now be misled about that behaviour, and the pull request neither changes it nor names it as left for later? Name the passage and quote the part of the pull request that should have covered it. A passage the pull request names, by section or file, as left as it is counts as named. Passages about neighbouring behaviour, generalisations that still hold, and wording a reader would not be misled by do not count." }
+            - { name: mechanism-not-behaviour, description: "Question: do the Intent or What changed sections (or headings meaning the same) describe the change mostly by internal names, such as functions, internal fields, constants or private modules a user or caller would not see, rather than by what a user, caller or reviewer sees change? A command, setting, file or output the user runs, edits or reads is not internal. Where the change is a refactor whose subject is those names, answer no." }
+            - { name: working-not-result, description: "Question: does the pull request report a check by its working rather than its result: a table mapping items one by one, a list of every item checked, line counts before and after, or similar, where one line saying what the check found would tell the reviewer the same? A figure the request asks the pull request to report, given in a line, does not count." }
+            - { name: transcribed-figure, description: "Question: does the pull request state, as a fact of the branch, a number that a command printed and that changes as the branch or project moves on, such as a test count (\"812 tests pass\"), a count of runs or trials, or a measured time? A limit or constant the change itself sets is not such a number, nor is an issue or pull request number, nor a figure the request asks the pull request to report." }
+            - { name: unverified-as-risk, description: "Question: under a section headed Risks (or a heading meaning the same), is there an item that is not a way the change could fail or harm, but something unverified, untried, deferred or undecided, such as \"no run has used it yet\" or \"not tested on Linux\"? A pull request with no such section answers no." }
+            - { name: obvious-filler, description: "Question: under What did not change or Risks (or headings meaning the same), is there a line that tells the reviewer nothing they would have doubted from the rest of the pull request, such as that an untouched command still behaves as before, or a risk the change plainly cannot carry? A line naming something left inconsistent on purpose, a deliberate omission or a follow-up issue is not filler." }
+            - { name: missed-worst-case, description: "You are also given the sources. Question: does the change introduce, or make worse, a worst case or a silent failure that a reviewer would want to weigh before merging (how long something can now take, what it can now drop, what it now does on an input the old code refused), and does the pull request leave it out or state it wrongly? Failures the old code had as well, and edge cases in paths the change does not touch, do not count. Answer no if the change carries no such case." }
+            - { name: stale-claim-kept, description: "Question: does the pull request still say something the fix commit made false: that \u00a7 6, M3 or the note has the coding agent run `squiz resolve`, or that the note's decision is that the commands themselves 'need nothing for an install', rather than that the binary is found by name? Quote the line. A mention of `resolve` only to say squiz has no such command, or that #54 still names it, does not count." }
+            - { name: review-history-in-body, description: "Question: does the body narrate the review or the fix as history: an 'Update', 'Changes since review' or 'Addressed' section or line, a mention of the finding or the reviewer, what an earlier version of the body or the note said, or the second commit's story? Quote it. What the note itself records, such as its account of an earlier instrument that observed nothing, is the note's content and does not count." }

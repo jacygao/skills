@@ -1,0 +1,146 @@
+# Expected: A short body: GitHub started no run for #248's branch and there was no way to start one by hand; the workflow now also accepts a manual run, and the jobs are unchanged. Verification names the type check and says the manual run could not be shown here, because GitHub offers it only for a workflow on the default branch, so it is to be tried after merge. It does not cite this pull request's own pull_request run, or a dispatch on #248's branch, as proof of the trigger.
+name: writing-pull-requests-dispatch-trigger
+description: "A one-line CI trigger whose working cannot be shown from its own branch. From squiz #257: the body said the manual trigger was proved by the pull request's own run and by a dispatched run on #248's branch, but GitHub offers workflow_dispatch only once the workflow is on the default branch, so neither run could show it."
+defaults:
+  runs: 3
+  timeout: 20m
+  judge_timeout: 10m
+  executor: copilot-sdk
+  model: claude-opus-5.5
+scoring:
+  threshold: 0.8
+  weights:
+    skill-invocation: 0
+    file-matches: 0.294118
+    panel: 0.705882
+agent_environment:
+  skills: [../../../skills/writing-pull-requests]
+  files: [{ src: workspace, dest: . }, { src: change.patch, dest: change.patch }]
+  commands: ["git init -q -b main && git add -A -- . ':!change.patch' ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Initial commit' && git checkout -q -b ci/dispatch && git apply change.patch && rm change.patch && git add -A -- . ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Let a CI run be started by hand'"]
+stimuli:
+  - name: dispatch-trigger
+    prompt: |
+      Read AGENTS.md first.
+
+      GitHub started no workflow run for #248's branch across three attempts: a
+      push, a close and reopen of the pull request, and an empty commit made for
+      the purpose. Other branches ran normally throughout. Actions is enabled with
+      `allowed_actions: all`, and the runs endpoint for #248's head returns
+      `total_count: 0`. Why GitHub dropped them is not established; since a further
+      push changed nothing, it is not a single lost push event.
+
+      `.github/workflows/ci.yml` triggers only on `pull_request` and on a push to
+      `main`, so there was no way to start a run by hand either, and a branch whose
+      head has no check-runs at all reads like a repository that runs no checks
+      (`.claude/rules/merging.md` says never to read a missing check as a passing
+      one).
+
+      What I did on this branch:
+
+      - Added `workflow_dispatch:` to the workflow's triggers, with a comment on
+        what it is for. The jobs, steps and other triggers are untouched.
+
+      `npx tsc --noEmit` is clean; no source file changed. Once this branch is
+      pushed, its pull request gets its own CI run, and the plan is then to start a
+      run by hand on #248's branch to get it a conclusion.
+
+      Open a pull request for this branch.
+    graders:
+      - name: skill-loaded
+        type: skill-invocation
+        config: { required: [writing-pull-requests] }
+      - name: title-on-first-line
+        type: file-matches
+        config: { path: pr/new.md, pattern: "^# \\S", negate: false }
+      - name: headings-from-the-template
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## (?!(?:Intent|What changed|What did not change|Risks|Verification|Notes)\\s*$)", negate: true }
+      - name: headings-in-order
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## What changed\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## Intent\\s*$|^## Risks\\s*$[\\s\\S]*^## Intent\\s*$|^## Verification\\s*$[\\s\\S]*^## Intent\\s*$|^## Notes\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What changed\\s*$|^## Verification\\s*$[\\s\\S]*^## What changed\\s*$|^## Notes\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## What did not change\\s*$|^## Notes\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Verification\\s*$", negate: true }
+      - name: closes-in-intent
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)(?:(?<![\\s\\S])|^## (?!Intent\\s*$)[^\\n]*\\n)(?:(?!## )[^\\n]*\\n)*?[^\\n]*\\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\\d", negate: true }
+      - name: no-table
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^ {0,3}[^\\n]*\\|[^\\n]*\\n {0,3}(?=[^\\n]*\\|)\\|?[ \\t]*:?-+:?[ \\t]*(?:\\|[ \\t]*:?-+:?[ \\t]*)*\\|?[ \\t]*$", negate: true }
+      - name: judges
+        type: panel
+        config:
+          models: [gpt-6.2-astra]
+          aggregation: majority
+          scoring: binary
+          evidence: [{ source: repo, max_file_bytes: 200000 }, { source: trajectory }]
+          prompt: |
+            The agent was asked to open a GitHub pull request, with this request:
+
+            Read AGENTS.md first.
+
+            GitHub started no workflow run for #248's branch across three attempts: a
+            push, a close and reopen of the pull request, and an empty commit made for
+            the purpose. Other branches ran normally throughout. Actions is enabled with
+            `allowed_actions: all`, and the runs endpoint for #248's head returns
+            `total_count: 0`. Why GitHub dropped them is not established; since a further
+            push changed nothing, it is not a single lost push event.
+
+            `.github/workflows/ci.yml` triggers only on `pull_request` and on a push to
+            `main`, so there was no way to start a run by hand either, and a branch whose
+            head has no check-runs at all reads like a repository that runs no checks
+            (`.claude/rules/merging.md` says never to read a missing check as a passing
+            one).
+
+            What I did on this branch:
+
+            - Added `workflow_dispatch:` to the workflow's triggers, with a comment on
+              what it is for. The jobs, steps and other triggers are untouched.
+
+            `npx tsc --noEmit` is clean; no source file changed. Once this branch is
+            pushed, its pull request gets its own CI run, and the plan is then to start a
+            run by hand on #248's branch to get it a conclusion.
+
+            Open a pull request for this branch.
+
+            It wrote the pull request to pr/new.md: the title on the first line, then the
+            body. Judge only that file. Each criterion is one question about it. Answer
+            each question on its own: look only for what it asks, and ignore every other
+            quality of the pull request, good or bad. Answer "yes" only if you can quote
+            the words in the pull request that make it so, and quote them in your
+            reasoning. Score a criterion 0 (fail) if the answer is yes, and 1 (pass) if it
+            is no.
+
+            The pull request describes the branch's change. Its diff against main, as the
+            agent found it, is below. The repository's other files are as they are on the
+            branch. Read the diff and the files for a question that says "given the
+            sources", and for no other. Read the agent's session only for a question that
+            names it.
+
+            ```diff
+            diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+            index cfccfe9..4450a1a 100644
+            --- a/.github/workflows/ci.yml
+            +++ b/.github/workflows/ci.yml
+            @@ -4,6 +4,10 @@ on:
+               pull_request:
+               push:
+                 branches: [main]
+            +  # GitHub sometimes starts no run for a pull request's push, and then reports no
+            +  # checks at all — which reads exactly like a repository that runs none. This is
+            +  # how a run is started by hand for a branch when that happens.
+            +  workflow_dispatch:
+             
+             permissions:
+               contents: read
+            ```
+          criteria:
+            - { name: contradicts-the-change, description: "You are also given the sources. Question: does the pull request state, about what the change does or how the code now behaves, something the diff contradicts, such that a reviewer checking the code against it would raise a finding: a wrong mechanism, timing, scope or result? A statement of intent the diff does not carry out counts, when it is stated as what the change does. A loose phrase whose plain reading the diff bears out does not count, nor does an edge case the statement does not claim to cover." }
+            - { name: claims-unshown, description: "You are also given the sources, the agent's own session (the commands it ran and what they printed), and the request, which says what was run before. Question: does the pull request say something was verified, tested, measured or shown working that was not: neither run in the agent's session nor reported in the request, or run but not showing what the pull request says it shows, or not possible from this branch? A command listed as the check to run is not a claim that it showed something." }
+            - { name: no-effect-unchecked, description: "You are also given the sources. Question: does the pull request claim that nothing else refers to, depends on or is affected by what changed, while a file in the repository still refers to it as it was before the change?" }
+            - { name: leaves-inconsistent-unnamed, description: "You are also given the sources. Question: after the change, does the repository still hold a passage, table row or line of code that states the old behaviour of exactly what the change alters, so that someone reading it would now be misled about that behaviour, and the pull request neither changes it nor names it as left for later? Name the passage and quote the part of the pull request that should have covered it. A passage the pull request names, by section or file, as left as it is counts as named. Passages about neighbouring behaviour, generalisations that still hold, and wording a reader would not be misled by do not count." }
+            - { name: mechanism-not-behaviour, description: "Question: do the Intent or What changed sections (or headings meaning the same) describe the change mostly by internal names, such as functions, internal fields, constants or private modules a user or caller would not see, rather than by what a user, caller or reviewer sees change? A command, setting, file or output the user runs, edits or reads is not internal. Where the change is a refactor whose subject is those names, answer no." }
+            - { name: working-not-result, description: "Question: does the pull request report a check by its working rather than its result: a table mapping items one by one, a list of every item checked, line counts before and after, or similar, where one line saying what the check found would tell the reviewer the same? A figure the request asks the pull request to report, given in a line, does not count." }
+            - { name: transcribed-figure, description: "Question: does the pull request state, as a fact of the branch, a number that a command printed and that changes as the branch or project moves on, such as a test count (\"812 tests pass\"), a count of runs or trials, or a measured time? A limit or constant the change itself sets is not such a number, nor is an issue or pull request number, nor a figure the request asks the pull request to report." }
+            - { name: unverified-as-risk, description: "Question: under a section headed Risks (or a heading meaning the same), is there an item that is not a way the change could fail or harm, but something unverified, untried, deferred or undecided, such as \"no run has used it yet\" or \"not tested on Linux\"? A pull request with no such section answers no." }
+            - { name: obvious-filler, description: "Question: under What did not change or Risks (or headings meaning the same), is there a line that tells the reviewer nothing they would have doubted from the rest of the pull request, such as that an untouched command still behaves as before, or a risk the change plainly cannot carry? A line naming something left inconsistent on purpose, a deliberate omission or a follow-up issue is not filler." }
+            - { name: missed-worst-case, description: "You are also given the sources. Question: does the change introduce, or make worse, a worst case or a silent failure that a reviewer would want to weigh before merging (how long something can now take, what it can now drop, what it now does on an input the old code refused), and does the pull request leave it out or state it wrongly? Failures the old code had as well, and edge cases in paths the change does not touch, do not count. Answer no if the change carries no such case." }
+            - { name: own-run-as-proof, description: "Question: does the pull request present this pull request's own CI run, or a run dispatched on #248's branch before this merges, as showing that the new manual trigger works? Quote the words. This pull request's run is a pull_request event, and GitHub offers a manual run only for a workflow_dispatch on the default branch, so neither can show it. A plan to start a manual run after merge, stated as a plan, does not count." }
+            - { name: unshown-not-explained, description: "Question: does the pull request leave out that starting a run by hand was not shown, or say so without the reason? A pull request passes only if it says the manual run could not be shown from this branch because GitHub offers it only once the workflow is on the default branch (or in equivalent words). Saying only that it is untested, with no reason, counts as yes." }

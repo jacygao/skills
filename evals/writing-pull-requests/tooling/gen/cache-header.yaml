@@ -1,0 +1,47 @@
+# The case. It starts from ../../cache-header/workspace/.
+description: >
+  A control case: an eight-line workflow step with one symptom, one cause and
+  one change, whose right body is short. It checks that the skill keeps it
+  short. From swe-drill #314: the original body was good, with Verification
+  separating what was checked locally from what can only be seen after merge.
+expected_outcome: >
+  A short body: Intent says the old layout survived a deploy because Pages
+  serves the script and stylesheet with `max-age=600`, and that each deploy now
+  gives both a `?v=<short commit>` URL; What changed is the one workflow step,
+  with the deploy failing if either URL lacks its version and the committed
+  `index.html` untouched; Verification gives the local `sed -E` run and what to
+  check on the live site after merge. No Risks or What did not change written
+  to fill the template.
+branch: pages/version-assets
+commit: Give the site's script and stylesheet a new URL on each deploy
+prompt: |
+  Read AGENTS.md first.
+
+  After #313 deployed, the user reloaded the leaderboard and still saw the old
+  layout. GitHub Pages serves `app.js` and `styles.css` with
+  `cache-control: max-age=600`, so a browser keeps running the previous script
+  and stylesheet for up to ten minutes. A reload re-checks `index.html` itself.
+  `leaderboard.json` was not affected: `app.js` already fetches it with
+  `cache: "no-cache"`.
+
+  On this branch, `.github/workflows/pages.yml` has one new step before the
+  upload:
+
+  - It rewrites `site/index.html` in the deploy's checkout with `sed -E`,
+    adding `?v=<first 7 characters of the commit>` to the `app.js` and
+    `styles.css` URLs. The committed `site/index.html` is unchanged.
+  - It then greps for each versioned URL on its own, so the deploy fails if
+    either is missing.
+
+  I ran the same `sed -E` on `site/index.html` locally with `abcdef1` as the
+  commit id. It gave `styles.css?v=abcdef1` and `app.js?v=abcdef1`. The
+  workflow runs only on main, so it has not run. No Python changed, so I did
+  not run `uv run pytest`.
+
+  Open a pull request for this branch.
+criteria:
+  - name: padded-section
+    description: "Question: does the pull request carry a section or line that says nothing this eight-line change needs: a Risks or What did not change written for it that no reviewer would have asked about (such as 'Low: the sed could fail to match', 'no Python changed', 'the site's content is unchanged'), a Notes that restates Intent, or a section with nothing in it? Quote it. That the committed `index.html` is unchanged, or that the deploy fails if a URL lacks its version, is part of what the change does and does not count."
+  - name: local-and-after-merge-blurred
+    description: "Question: does Verification present the local `sed -E` run as showing the deploy, claim the workflow or the live site was checked, or leave out that what the live site serves can only be checked after merge? Quote the line, or name what is missing."
+tables_ok: false

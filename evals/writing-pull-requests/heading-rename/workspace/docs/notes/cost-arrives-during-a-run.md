@@ -1,0 +1,210 @@
+---
+settles: "§ 4 — whether pi reports cost during a run, and how a round's cost is summed; § 7 — the cost a killed round records"
+issue: [12, 21]
+recorded: 2026-09-12
+versions: { pi: "0.84.2, 0.85.1", node: 24.15.0 }
+recheck-when: pi upgrades, or an unmeasured API path is configured
+---
+
+# Cost arrives during a run
+
+## Intent
+
+- **§ 8 assumed cost arrives at the end of a run**, and rested the cost bound on
+  it. If cost instead arrives during a run, a killed round yields a figure
+  rather than nothing, and the bound's design has to be checked against that.
+- **Nothing said which field carries the cost, or how many carry it.** An
+  adapter that reads the wrong one, or sums two that overlap, reports a number
+  no one can tell is wrong.
+- **A cost of zero had one reading and needed more.** A free round, a model the
+  price catalogue cannot price, and a run that never reached the provider all
+  report zero, and the bound cannot be enforced without telling them apart.
+- **Whether any of this belongs to `pi` or to the API path underneath it.** Only
+  one provider was configured, so a second could have reported cost differently
+  or not at all.
+
+## Decisions
+
+- **Cost arrives per assistant message, not at the end of the run.** A round's
+  cost is the sum over assistant `message_end` events; there is no run-total
+  event, so the adapter does the addition.
+- **A killed round yields a floor, not a figure.** The tokens of the request in
+  flight are spent, billed, and never reported.
+- **A zero cost against non-zero tokens is unknown, not free, and both fields go
+  in the episode state file.** `pi` prices from its own catalog, so a model it
+  cannot price reports nothing against real spend.
+- **The adapter reads `stopReason` as well as the cost.** A provider that never
+  ran reports zero for both fields, so cost and tokens alone cannot tell a
+  failed round from a free one.
+- **`message_end` is the only event to read the cost from.** What
+  `message_update` holds depends on the API path, and on one of the two measured
+  it holds zero for the whole of the message. 2026-10-05: M7 reads each
+  assistant message's usage from the report file the extension writes, not
+  from `pi`'s stream (§ 4 The `pi` adapter).
+- **The adapter assumes no provider reports cost, and treats one that does as
+  the ordinary case.** Two providers on two API paths both report it, so the
+  behaviour belongs to `pi` rather than to a provider — but `pi` prices from a
+  catalog it can miss, so an unpriced model is a configuration a shipped harness
+  meets rather than an edge case.
+
+## Needs your input
+
+**§ 2's Verified against table records `pi` 0.84.2.** Everything measured since
+is 0.85.1, and the two agree wherever both were run.
+
+## Reference
+
+### The field
+
+| | |
+|---|---|
+| **Event** | `message_end`, where `message.role` is `"assistant"` |
+| **Field** | `message.usage.cost.total` |
+| **Type** | number |
+| **Units** | US dollars, already priced — not tokens |
+| **A round's cost** | the sum of that field over every assistant `message_end` |
+
+Alongside it, `message.usage` carries `input`, `output`, `cacheRead`,
+`cacheWrite`, `reasoning` and `totalTokens` as integer token counts, and a
+four-way breakdown in dollars under `message.usage.cost` — `input`, `output`,
+`cacheRead`, `cacheWrite`, `total`. There is no `reasoning` key under `cost`.
+
+Three rules go with reading it:
+
+- **Only assistant messages carry `usage` at all.** `message_end` also fires for
+  the `user` message and for every `toolResult` message; on those the `message`
+  object has no `usage` key. Filtering on `usage` and on `role === "assistant"`
+  are equivalent.
+- **`turn_end` repeats the turn's last assistant message, cost included.**
+  `turn_end.message.usage.cost.total` was identical to the last assistant
+  `message_end` of that turn in every run. Summing both double-counts.
+- **`agent_end` carries the whole transcript**, each assistant message in
+  `agent_end.messages[]` with its own `usage.cost.total`. Summing those matches
+  summing `message_end` to the cent, but it is the wrong place to read from: it
+  is the largest line in the stream.
+
+There is **no run-total event**. Neither `agent_end` nor `agent_settled` carries
+an aggregate.
+
+On `message_update` the usage sits at the event's top level, as `usage`, not
+under `message` — that event carries no `message` key at all.
+
+### Which API path a provider takes
+
+The timing belongs to the API path, not to the provider or the model. `pi` names
+the path on every assistant message, as `message.api`, which is what identifies
+it in output rather than in the source.
+
+| `message.api` | Priced at | Where a non-zero cost first appears |
+|---|---|---|
+| `openai-completions` | the final SSE chunk | the last `message_update`, 0.2–1.5 ms before `message_end` |
+| `openai-responses` | the terminal response event | `message_end` itself, in 14 messages of 15 |
+| `azure-openai-responses` | the terminal response event | *(unverified)* — same stream processor as `openai-responses` |
+| `anthropic-messages` | the SSE `message_start`, then again on each usage update | *(unverified)* — would be seconds before `message_end` |
+
+Both measured paths price at the end of a message. They differ only in whether
+anything earlier shows it: on `openai-completions` the last `message_update`
+carries the final cost a millisecond or so ahead, and on `openai-responses` it
+usually carries zero, because it is emitted before the response is finalised.
+
+So an adapter that reads `message_update` for cost recovers everything on one
+path and almost nothing on the other. Reading `message_end` is correct on both.
+
+`azure-openai-responses` and `openai-responses` are separate paths with separate
+modules, but they share `processResponsesStream`, which prices the message in
+its `finalizeResponse`. Azure is therefore the least informative of the two
+unverified rows: closing it would exercise code already exercised.
+
+### A provider that cannot run
+
+A provider `pi` reached and could not use fails inside the stream rather than
+around it. `pi` exits 0, writes nothing to stderr, and emits a complete
+assistant message whose `stopReason` is `"error"` and whose `errorMessage` holds
+the reason. A provider `pi` never got as far as using takes the other path
+entirely: it exits non-zero, writes nothing to stdout, and puts the whole
+explanation on stderr, so reading only the stream loses it. Every usage
+field on it is zero, `totalTokens` included, so it is indistinguishable by cost
+from both a free round and a round `pi` could not price.
+
+`pi auth check --provider <name> --json` reports `{"status":"ready"}` on the
+strength of a stored key alone. It does not establish that the provider can be
+reached, so it is not a substitute for a run.
+
+§ 7's failure table gives "the model API is unavailable" a behaviour of stderr
+saying the review did not run. `pi`'s stderr is empty in this case, so the
+harness has to construct that message from `stopReason` itself.
+
+### The dollars are `pi`'s arithmetic, not the provider's
+
+`pi` prices the run itself in `pi-ai`'s `models.js`, as
+`(rate / 1_000_000) * tokens` for each of input, output, cache read and cache
+write, with rates from its own catalog at `~/.pi/agent/models-store.json`.
+
+**The catalog refreshes itself, so a rate read from it is a current value rather
+than a fixed one.** `deepseek-v4-pro` was recorded at 0.435 input and 0.87
+output per million tokens on 2026-09-06; on 2026-09-12 the catalog held 1.32 and
+3.96. The cost bound is enforced against whatever the catalog holds when the
+round runs, which need not be what a person read when they chose the bound.
+
+A model's rate is also not always a single number. Several carry a `tiers` array
+that raises every rate above a threshold — 272,000 input tokens, roughly
+doubling them. A long review can cross that line mid-episode.
+
+So **a model the catalog does not price yields `cost.total: 0` against a
+non-zero `totalTokens`**, indistinguishable from a genuinely free round if only
+the cost is read. Treat `totalTokens > 0` with `cost.total === 0` as unknown.
+Both fields belong in the episode state file for that check to be possible.
+
+### Reasoning tokens are priced, and are not a new zero-cost case
+
+`usage.reasoning` is a **subset of `usage.output`**, not an addition to it. On a
+reasoning model it dominates — 832 of 903 output tokens on one message.
+`totalTokens` is `input + output`, with reasoning already inside `output` and
+never counted twice.
+
+`calculateCost` has no reasoning rate. It prices `input`, `output`, `cacheRead`
+and `cacheWrite` and nothing else, so reasoning is billed at the output rate by
+virtue of sitting inside the output count. A reasoning model therefore does not
+report tokens that carry no cost.
+
+### A killed run
+
+`SIGTERM` — what a time bound would send — makes `pi` kill its tracked children
+and exit 143. It prints nothing after the signal and leaves no partial line.
+
+A kill before the first assistant message finishes recovers **nothing** — every
+usage field reads zero, `totalTokens` included. After that it recovers only the
+messages already complete, which on one measured prompt was about a twentieth of
+what the finished run reported. The in-flight request's tokens are spent,
+billed, and never reported.
+
+Nothing on disk fills the gap: with `--no-session`, `pi` wrote no file under
+`--session-dir` and none appeared under `~/.pi`; stderr was empty in every run.
+**The stdout stream is the only record of what a round cost.**
+
+## Limits
+
+- **Whether `anthropic-messages` reports cost mid-message.** `pi-ai`'s Anthropic
+  path populates and prices usage at the SSE `message_start`, which would put a
+  real cost *seconds* before `message_end` *(unverified — read from `pi`'s
+  source, never observed in output)*. No Anthropic credential exists here, so it
+  is as unverified as it ever was. It strengthens the conclusion rather than
+  weakening it either way, because a cost that arrives earlier still arrives
+  during the run.
+- **`azure-openai-responses` was never run.** It needs `AZURE_OPENAI_BASE_URL`
+  or `AZURE_OPENAI_RESOURCE_NAME`, and neither is set here. It shares
+  `processResponsesStream` with the `openai-responses` path already measured, so
+  it is the least informative of the unverified rows.
+- **Whether a provider that bills reasoning separately exists.** Both measured
+  paths fold reasoning into the output token count, where the output rate prices
+  it. `calculateCost` has no rate for reasoning, so a provider that billed it
+  apart from output would be under-priced with nothing in the stream to show it.
+- **Tiered rates in practice.** That `tiers` raises the rate above 272,000 input
+  tokens was read from the catalog and from `calculateCost`. No probe came close
+  to the threshold, so no tiered round was observed.
+- **`SIGKILL`.** Only `SIGTERM` was tested. `SIGKILL` denies `pi` its handler, so
+  it can only recover less.
+- **What a killed run recovers at 0.85.1.** The kill behaviour was measured at
+  0.84.2 only.
+- **Whether an aborted request is billed.** That in-flight tokens are paid for is
+  ordinary streaming-API behaviour, not confirmed against an invoice.

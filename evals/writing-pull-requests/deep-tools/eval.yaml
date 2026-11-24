@@ -1,0 +1,238 @@
+# Expected: Intent gives the owner's decision (no sandbox in the first version, held as #529) and that `deep` now grants single-command tools and no shell, without hiding that the test command still runs the project's code unconfined. What changed covers M11, § 4 Depth and § 8 What ships. Every passage still saying `deep` grants a shell is either fixed on the branch or named, findably, in What did not change: § 4 The reviewer session's note, § 4 Confinement's `deep` paragraph, refusals and shell-group record, the `pi` adapter's grant, the Copilot adapter's grant paragraph, § 4 Charter's verify rule, `charter.md`'s line, and § 9's `depth` row. No Verification beyond saying there is nothing to run.
+name: writing-pull-requests-deep-tools
+description: "A spec change that narrows a grant, leaving several passages elsewhere in the spec, and in the shipped charter, still describing the old grant. From squiz #532: `deep` lost its shell, and What did not change named only \u00a7 4 Confinement, while \u00a7 9, the `pi` adapter, the reviewer session and the charter still said `deep` grants one, which drew a high and a medium finding."
+defaults:
+  runs: 3
+  timeout: 20m
+  judge_timeout: 10m
+  executor: copilot-sdk
+  model: claude-opus-5.5
+scoring:
+  threshold: 0.8
+  weights:
+    skill-invocation: 0
+    file-matches: 0.3125
+    panel: 0.6875
+agent_environment:
+  skills: [../../../skills/writing-pull-requests]
+  files: [{ src: workspace, dest: . }, { src: change.patch, dest: change.patch }]
+  commands: ["git init -q -b main && git add -A -- . ':!change.patch' ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Initial commit' && git checkout -q -b specs/m11-typed-tools && git apply change.patch && rm change.patch && git add -A -- . ':!fix.patch' && git -c user.name=fixture -c user.email=fixture@example.com commit -q -m 'Grant depth deep typed tools instead of bash, and hold the sandbox for later'"]
+stimuli:
+  - name: deep-tools
+    prompt: |
+      Read AGENTS.md first.
+
+      The owner decided on 2026-10-06 that a reviewer which runs the project's code
+      needs an operating-system sandbox, filed as #529, and then that the first
+      version ships `deep` without one. The sandbox is held at P2, and `deep` is
+      narrowed instead.
+
+      On this branch I changed the specs for that:
+
+      - M11 in `docs/specs/milestones.md`: `deep` now grants tools that each run one
+        command with fixed arguments, and no shell. `run_tests` takes no argument
+        and runs the configured test command; `git_log_search`, `git_blame` and
+        `git_show` take a term, a file and line, and a commit, and run only that
+        `git` subcommand. The reviewer's environment carries no GitHub credential.
+        A new criterion has § 4 Confinement say what risk remains.
+      - § 4 Depth: the `deep` row and the rule under the table.
+      - § 8 What ships: `deep` at P1 as those tools, and the sandbox as a P2 row.
+      - What `deep` loses is running arbitrary code to test a hypothesis. Running
+        the tests and reading history cover most of what a review needs.
+
+      § 4 Confinement still describes a `deep` shell. M11 rewrites it when it
+      builds the tools, and states the remaining risk there. The configuration
+      refuses `deep` today, so no round runs at it.
+
+      It is a spec change only, so there was nothing to run.
+
+      Open a pull request for this branch.
+    graders:
+      - name: skill-loaded
+        type: skill-invocation
+        config: { required: [writing-pull-requests] }
+      - name: title-on-first-line
+        type: file-matches
+        config: { path: pr/new.md, pattern: "^# \\S", negate: false }
+      - name: headings-from-the-template
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## (?!(?:Intent|What changed|What did not change|Risks|Verification|Notes)\\s*$)", negate: true }
+      - name: headings-in-order
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^## What changed\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## Intent\\s*$|^## Risks\\s*$[\\s\\S]*^## Intent\\s*$|^## Verification\\s*$[\\s\\S]*^## Intent\\s*$|^## Notes\\s*$[\\s\\S]*^## Intent\\s*$|^## What did not change\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What changed\\s*$|^## Verification\\s*$[\\s\\S]*^## What changed\\s*$|^## Notes\\s*$[\\s\\S]*^## What changed\\s*$|^## Risks\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## What did not change\\s*$|^## Notes\\s*$[\\s\\S]*^## What did not change\\s*$|^## Verification\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Risks\\s*$|^## Notes\\s*$[\\s\\S]*^## Verification\\s*$", negate: true }
+      - name: closes-in-intent
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)(?:(?<![\\s\\S])|^## (?!Intent\\s*$)[^\\n]*\\n)(?:(?!## )[^\\n]*\\n)*?[^\\n]*\\b(?:[Cc]loses|[Ff]ixes|[Rr]esolves) #\\d", negate: true }
+      - name: no-table
+        type: file-matches
+        config: { path: pr/new.md, pattern: "(?m)^ {0,3}[^\\n]*\\|[^\\n]*\\n {0,3}(?=[^\\n]*\\|)\\|?[ \\t]*:?-+:?[ \\t]*(?:\\|[ \\t]*:?-+:?[ \\t]*)*\\|?[ \\t]*$", negate: true }
+      - name: judges
+        type: panel
+        config:
+          models: [gpt-6.2-astra]
+          aggregation: majority
+          scoring: binary
+          evidence: [{ source: repo, max_file_bytes: 200000 }, { source: trajectory }]
+          prompt: |
+            The agent was asked to open a GitHub pull request, with this request:
+
+            Read AGENTS.md first.
+
+            The owner decided on 2026-10-06 that a reviewer which runs the project's code
+            needs an operating-system sandbox, filed as #529, and then that the first
+            version ships `deep` without one. The sandbox is held at P2, and `deep` is
+            narrowed instead.
+
+            On this branch I changed the specs for that:
+
+            - M11 in `docs/specs/milestones.md`: `deep` now grants tools that each run one
+              command with fixed arguments, and no shell. `run_tests` takes no argument
+              and runs the configured test command; `git_log_search`, `git_blame` and
+              `git_show` take a term, a file and line, and a commit, and run only that
+              `git` subcommand. The reviewer's environment carries no GitHub credential.
+              A new criterion has § 4 Confinement say what risk remains.
+            - § 4 Depth: the `deep` row and the rule under the table.
+            - § 8 What ships: `deep` at P1 as those tools, and the sandbox as a P2 row.
+            - What `deep` loses is running arbitrary code to test a hypothesis. Running
+              the tests and reading history cover most of what a review needs.
+
+            § 4 Confinement still describes a `deep` shell. M11 rewrites it when it
+            builds the tools, and states the remaining risk there. The configuration
+            refuses `deep` today, so no round runs at it.
+
+            It is a spec change only, so there was nothing to run.
+
+            Open a pull request for this branch.
+
+            It wrote the pull request to pr/new.md: the title on the first line, then the
+            body. Judge only that file. Each criterion is one question about it. Answer
+            each question on its own: look only for what it asks, and ignore every other
+            quality of the pull request, good or bad. Answer "yes" only if you can quote
+            the words in the pull request that make it so, and quote them in your
+            reasoning. Score a criterion 0 (fail) if the answer is yes, and 1 (pass) if it
+            is no.
+
+            The pull request describes the branch's change. Its diff against main, as the
+            agent found it, is below. The repository's other files are as they are on the
+            branch. Read the diff and the files for a question that says "given the
+            sources", and for no other. Read the agent's session only for a question that
+            names it.
+
+            ```diff
+            diff --git a/docs/specs/milestones.md b/docs/specs/milestones.md
+            index f9b8dac..a1f4756 100644
+            --- a/docs/specs/milestones.md
+            +++ b/docs/specs/milestones.md
+            @@ -1,6 +1,6 @@
+             # Milestones
+             
+            -**Version:** 0.29 (draft)
+            +**Version:** 0.30 (draft)
+             **Status:** For review
+             **Owner:** TBD
+             
+            @@ -69,17 +69,29 @@ with M11.
+             
+             ## M11 — Depth `deep`
+             
+            -The `bash` grant, on the snapshot M7 gives every reviewer.
+            +The reviewer at `deep` runs the project's tests and reads its history, through
+            +tools that do one thing each, on the snapshot M7 gives every reviewer. It is
+            +granted no shell.
+             
+             The snapshot holds no installed dependencies, so the configured test command
+             installs or builds what it needs before the tests run. What that adds to a round
+            -is measured before M11 is planned.
+            +is measured before M11 is planned (#496).
+             
+             ### Acceptance criteria
+             
+            -- [ ] Depth `deep` produces a command line with `bash`, and the configured test
+            -      command reaches the reviewer.
+            -- [ ] A write the reviewer makes through the shell is detected on its snapshot
+            -      and named in the summary.
+            +- [ ] Depth `deep` grants the `read` tools and these, and no shell, for `pi` and
+            +      for Copilot:
+            +  - `run_tests`, which takes no argument and runs the configured test command;
+            +  - `git_log_search`, `git_blame` and `git_show`, which take a term, a file and
+            +    line, and a commit, and run only that `git` subcommand.
+            +- [ ] No argument reaches a shell: each tool runs its command with its arguments
+            +      as separate words.
+            +- [ ] The reviewer's environment carries no GitHub token or `gh` credential.
+            +- [ ] A write the configured test command makes is detected on the snapshot and
+            +      named in the summary.
+             - [ ] A configured test command that works in a fresh checkout runs to
+                   completion in the snapshot.
+            +- [ ] The harness specification's § 4 Confinement says what remains: the test
+            +      command runs the project's code at the commit under review with the user's
+            +      access, as the coding agent's own test runs do, and nothing confines it.
+            +      An operating-system sandbox is held as #529.
+            diff --git a/docs/specs/review-harness-spec.md b/docs/specs/review-harness-spec.md
+            index 36115c3..60d12ed 100644
+            --- a/docs/specs/review-harness-spec.md
+            +++ b/docs/specs/review-harness-spec.md
+            @@ -1,6 +1,6 @@
+             # Review Harness Specification: A Local Review Loop That Lives on the Pull Request
+             
+            -**Version:** 0.84 (draft)
+            +**Version:** 0.85 (draft)
+             **Status:** For review
+             **Owner:** TBD
+             
+            @@ -208,15 +208,23 @@ Copilot adapter gives.
+             | Depth | Tools granted | What it can answer |
+             |---|---|---|
+             | `read` *(default)* | `read`, `grep`, `find`, `ls` | Anything the code can be read for. |
+            -| `deep` | the above, plus `bash` | Also whether the tests actually pass, whether a line was deliberate (`git log -S`, `git blame`), and whether a hypothesis holds when run. |
+            +| `deep` | the above, plus `run_tests`, `git_log_search`, `git_blame` and `git_show`. No shell | Also whether the tests actually pass, and whether a line was deliberate (`git log -S`, `git blame`, `git show`). |
+             
+             **The calls the reviewer reports through are granted at both depths**, alongside
+             the tools in the table. Depth decides how much the reviewer may read and run.
+             Reporting is not a depth: a reviewer with no way to report returns nothing
+             whatever it was allowed to look at. The three calls are named under Findings.
+             
+            -`deep` depends on the tracked-file comparison described under Confinement, which
+            -is the only mechanism that catches a write made through the shell.
+            +**Each `deep` tool runs one command, and no argument reaches a shell.**
+            +`run_tests` takes no argument and runs the test command the configuration names.
+            +`git_log_search` takes a term, `git_blame` a file and a line, and `git_show` a
+            +commit, and each runs that one `git` subcommand with its arguments as separate
+            +words. The reviewer's environment carries no GitHub token or `gh` credential.
+            +
+            +The test command runs the project's code at the commit under review, with the
+            +user's access, as the coding agent's own test runs do. Nothing confines it, and
+            +the tracked-file comparison described under Confinement is what catches a write
+            +it makes to the snapshot.
+             
+             ### Confinement
+             
+            @@ -540,7 +548,7 @@ until something asks.
+             | **P0** | The failure comment | What failed and what else the round established, posted by a round that fails, with the same reason the command prints |
+             | **P0** | The command's stderr | The one line that carries a failure GitHub could not be told about. Without it a round that cannot reach GitHub says nothing about why |
+             | **P0** | The episode state file | Round count, per-round cost, what the episode spent on attempts that were no round, whether its close has been reported, keyed by the pull request's number and living in the worktree |
+            -| **P1** | Depth `deep` | The `bash` grant. It ships with the tracked-file comparison, and with the record each shell writes of the group it leads, or not at all |
+            +| **P1** | Depth `deep` | Running the configured tests and reading history (`git log -S`, `git blame`, `git show`) through tools that take fixed arguments, with no shell granted and no GitHub credential in the reviewer's environment. It ships with the tracked-file comparison, or not at all |
+             | **P1** | The tracked-file comparison | `git status`, the hashes of tracked files, and `HEAD`, taken before the reviewer starts and again when it exits. What `deep` depends on |
+             | **P1** | A non-mutating test invocation | Named in configuration, so running the tests cannot rewrite the code under review. Reachable only at `deep` |
+             | **P1** | `squiz status` | The reviews running and finished in every worktree, for a person and a coordinator |
+            @@ -551,6 +559,7 @@ until something asks.
+             | **P1** | The reviewer's model in configuration | A `model` setting, so a project chooses the model its reviewer runs on, defaulting to the user's default |
+             | **P1** | A finding anchored to a range | `start_line` alongside `line`, so a finding about several lines highlights all of them. The anchor validator would have to hold each hunk's span, which it does not today, and the reviewer would have to return a range worth reading |
+             | **P2** | A GitHub App identity | The harness posts as its own bot rather than as the account that authenticated `gh`. Configured by the host project, which installs the App and holds its key |
+            +| **P2** | An operating-system sandbox | The reviewer, and every process it starts, inside a boundary the operating system enforces: writes only to its round, network only to the model and the package registries, none of the user's credentials (#529) |
+             | **P2** | Tracking findings scoped to the change as a whole | Today they are reported in the summary comment and carried no further |
+             | **P2** | A record other than a pull request | The pull request is one implementation behind an interface, and the identity a comment is posted under is the one whatever holds the record supplies |
+             | **P2** | A person in the review cycle | What the loop does with a thread a person opened, beyond leaving it alone |
+            ```
+          criteria:
+            - { name: contradicts-the-change, description: "You are also given the sources. Question: does the pull request state, about what the change does or how the code now behaves, something the diff contradicts, such that a reviewer checking the code against it would raise a finding: a wrong mechanism, timing, scope or result? A statement of intent the diff does not carry out counts, when it is stated as what the change does. A loose phrase whose plain reading the diff bears out does not count, nor does an edge case the statement does not claim to cover." }
+            - { name: claims-unshown, description: "You are also given the sources, the agent's own session (the commands it ran and what they printed), and the request, which says what was run before. Question: does the pull request say something was verified, tested, measured or shown working that was not: neither run in the agent's session nor reported in the request, or run but not showing what the pull request says it shows, or not possible from this branch? A command listed as the check to run is not a claim that it showed something." }
+            - { name: no-effect-unchecked, description: "You are also given the sources. Question: does the pull request claim that nothing else refers to, depends on or is affected by what changed, while a file in the repository still refers to it as it was before the change?" }
+            - { name: leaves-inconsistent-unnamed, description: "You are also given the sources. Question: after the change, does the repository still hold a passage, table row or line of code that states the old behaviour of exactly what the change alters, so that someone reading it would now be misled about that behaviour, and the pull request neither changes it nor names it as left for later? Name the passage and quote the part of the pull request that should have covered it. A passage the pull request names, by section or file, as left as it is counts as named. Passages about neighbouring behaviour, generalisations that still hold, and wording a reader would not be misled by do not count." }
+            - { name: mechanism-not-behaviour, description: "Question: do the Intent or What changed sections (or headings meaning the same) describe the change mostly by internal names, such as functions, internal fields, constants or private modules a user or caller would not see, rather than by what a user, caller or reviewer sees change? A command, setting, file or output the user runs, edits or reads is not internal. Where the change is a refactor whose subject is those names, answer no." }
+            - { name: working-not-result, description: "Question: does the pull request report a check by its working rather than its result: a table mapping items one by one, a list of every item checked, line counts before and after, or similar, where one line saying what the check found would tell the reviewer the same? A figure the request asks the pull request to report, given in a line, does not count." }
+            - { name: transcribed-figure, description: "Question: does the pull request state, as a fact of the branch, a number that a command printed and that changes as the branch or project moves on, such as a test count (\"812 tests pass\"), a count of runs or trials, or a measured time? A limit or constant the change itself sets is not such a number, nor is an issue or pull request number, nor a figure the request asks the pull request to report." }
+            - { name: unverified-as-risk, description: "Question: under a section headed Risks (or a heading meaning the same), is there an item that is not a way the change could fail or harm, but something unverified, untried, deferred or undecided, such as \"no run has used it yet\" or \"not tested on Linux\"? A pull request with no such section answers no." }
+            - { name: obvious-filler, description: "Question: under What did not change or Risks (or headings meaning the same), is there a line that tells the reviewer nothing they would have doubted from the rest of the pull request, such as that an untouched command still behaves as before, or a risk the change plainly cannot carry? A line naming something left inconsistent on purpose, a deliberate omission or a follow-up issue is not filler." }
+            - { name: missed-worst-case, description: "You are also given the sources. Question: does the change introduce, or make worse, a worst case or a silent failure that a reviewer would want to weigh before merging (how long something can now take, what it can now drop, what it now does on an input the old code refused), and does the pull request leave it out or state it wrongly? Failures the old code had as well, and edge cases in paths the change does not touch, do not count. Answer no if the change carries no such case." }
+            - { name: shell-passage-unnamed, description: "Question: does the PR leave any passage that still says `deep` grants a shell neither changed on the branch nor named in the body? The passages, as the workspace stands after the change: \u00a7 4 The reviewer session's 'Only `deep` grants a shell'; \u00a7 4 Confinement's `deep` paragraph ('At `deep` the grant includes `bash`'), its refused calls and its shell-group record; the `pi` adapter's 'deep adds `bash`'; the Copilot adapter's grant paragraph on what `deep` would need; \u00a7 4 Charter's 'run the test where the depth grants a shell'; `charter.md`'s 'Where you were given a shell'; \u00a7 9 Configuration's `depth` row, '`deep` adds the shell'. Check each against the diff and the body. Answer yes, quoting what the body says instead, if any one is neither changed nor named by its section or a description a reader could find it from. Naming Confinement alone is yes; a blanket line such as 'other passages still mention the shell' is yes. The Adapters paragraph saying Copilot's detached shells matter at `deep` alone may be named too; leaving it out is not a defect." }

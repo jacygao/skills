@@ -1,0 +1,20 @@
+The agent was asked to open a GitHub pull request, with this request:
+
+{request}
+It wrote the pull request to {output}: the title on the first line, then the
+body. Judge only that file. Each criterion is one question about it. Answer
+each question on its own: look only for what it asks, and ignore every other
+quality of the pull request, good or bad. Answer "yes" only if you can quote
+the words in the pull request that make it so, and quote them in your
+reasoning. Score a criterion 0 (fail) if the answer is yes, and 1 (pass) if it
+is no.
+
+The pull request describes the branch's change. Its diff against main, as the
+agent found it, is below. The repository's other files are as they are on the
+branch. Read the diff and the files for a question that says "given the
+sources", and for no other. Read the agent's session only for a question that
+names it.
+
+```diff
+{diff}
+```

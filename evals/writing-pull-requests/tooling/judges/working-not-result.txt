@@ -1,0 +1,1 @@
+Question: does the pull request report a check by its working rather than its result: a table mapping items one by one, a list of every item checked, line counts before and after, or similar, where one line saying what the check found would tell the reviewer the same? A figure the request asks the pull request to report, given in a line, does not count.

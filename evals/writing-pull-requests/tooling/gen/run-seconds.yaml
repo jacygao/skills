@@ -1,0 +1,56 @@
+# The case. It starts from ../../run-seconds/workspace/.
+description: >
+  A cancel path whose timing the brief describes one way and the code does
+  another. From swe-drill #41 (then suss): the body said a cancelled run's
+  `run_seconds` is "measured to the cancel", while the diff takes it after the
+  stop exec returns; the reviewer raised a finding on the description, then
+  withdrew it as relying on the inaccurate description.
+expected_outcome: >
+  A body saying that on Harbor's agent timeout suss now kills the harness's
+  process group inside the sandbox, captures the patch, writes a `timed-out`
+  record and passes the cancel on, Closes #38. It says a cancelled run's
+  `run_seconds` runs until the stop returns, so it includes the stop exec (up
+  to about 15 seconds) unlike a finished run's, and it says what happens when
+  the stop fails. It describes this as behaviour, not by `_start`,
+  `STOP_SECONDS` or `result.cancelled`, and never says the time ends at the
+  cancel.
+branch: agent/harbor-timeout-record
+commit: Write a timed-out suss.json when Harbor's agent timeout stops run
+prompt: |
+  Read AGENTS.md first.
+
+  This branch does issue #38 (`issues/38.md`). Harbor 0.22.0 runs the agent
+  phase in `asyncio.wait_for`. When that fired, `SussAgent.run` got a
+  `CancelledError`, captured the patch while the harness was still running in
+  the container, and wrote no `suss.json`.
+
+  What I did:
+
+  - Every harness command now runs under the bash wrapper from the Docker
+    exec-timeout note, whether or not `max_seconds` is set. The wrapper writes
+    the command's process-group id to a file in the logs directory, named for
+    that start, and deletes it once the command exits.
+  - On a cancel, suss kills that group with one more `exec`, bounded so that a
+    stuck exec cannot hang the trial, since Harbor waits on a cancelled agent
+    with no limit. `run` then returns a `timed-out` result, with `run`'s exit
+    code `null` and `run_seconds` measured to the cancel, and carries the
+    `CancelledError` back instead of raising it.
+  - `SussAgent.run` captures the patch and writes `suss.json` within a cleanup
+    limit, then raises the cancel, so Harbor still sees the timeout.
+  - Spec § 3 now says a trial is also `timed-out` when Harbor's agent timeout
+    stops it, and its example shows `run_seconds` as `1290.4`.
+  - New tests cancel `run` mid-run through the local environment, with and
+    without `max_seconds`, while the fake harness has a backgrounded child due
+    to write to the workspace, and check that no harness process survives, the
+    late write never lands, and the record is `timed-out`. Another wraps `run`
+    in `asyncio.wait_for`, as Harbor does, and expects `TimeoutError`.
+
+  `uv run pytest` passed.
+
+  Open a pull request for this branch.
+criteria:
+  - name: run-seconds-to-the-cancel
+    description: "You are also given the sources. Question: does the pull request say that a cancelled run's `run_seconds`, or the time suss records for it, is measured to the cancel, ends when the cancel arrives, or leaves out the time suss spends stopping the harness? Given the diff, it is taken after the stop exec returns, so it includes that exec. A statement that it runs until the stop returns, or until the harness is killed and the stop comes back, answers no. A body that says nothing about how a cancelled run is timed answers no."
+  - name: run-seconds-unstated
+    description: "Question: does the pull request leave out how a cancelled run's `run_seconds` is measured: where its time ends? A body that says where it ends, rightly or wrongly, answers no. Saying only that the record has a `run_seconds`, or that it is a decimal, answers yes."
+tables_ok: false

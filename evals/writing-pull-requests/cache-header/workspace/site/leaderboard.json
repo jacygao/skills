@@ -1,0 +1,463 @@
+{
+  "updated": "2026-11-20",
+  "rebench": {
+    "title": "rebench",
+    "about": "SWE-rebench’s July 2026 snapshot: 108 GitHub issues from open-source repositories, each graded by its own hidden tests. Every arm runs the same tasks, graded the same way.",
+    "tasks": 108,
+    "arms": [
+      {
+        "name": "copilot-opus",
+        "agent": "Copilot CLI 1.0.107",
+        "harness": "Default",
+        "model": "claude-opus-5.5, effort high",
+        "rate": 0.6883,
+        "margin": 0.0756,
+        "pass": 0.7963,
+        "timedOut": 8,
+        "cost": 118.39,
+        "hours": 22.0,
+        "tokens": 1226000,
+        "where": "Docker · Azure",
+        "params": "version 1.0.107, effort high",
+        "runs": [
+          {
+            "job": "20261116T203211Z-1",
+            "date": "2026-11-16",
+            "where": "Docker on Azure, Australia East",
+            "median": 9.5
+          },
+          {
+            "job": "20261116T203507Z-1",
+            "date": "2026-11-16",
+            "where": "Docker on Azure, New Zealand North",
+            "median": 9.4
+          },
+          {
+            "job": "20261116T203832Z-1",
+            "date": "2026-11-16",
+            "where": "Docker on Azure, Korea Central",
+            "median": 9.0
+          }
+        ],
+        "note": "The three runs ran at once, one Azure region each, and no trial needed running again. Eight trials timed out with no cost recorded, and the cost per run leaves them out. apache__pulsar-25953 has no test result in any of the three runs, and counts as unresolved. Its run on Modal, which resolved 62%, and its three runs on a PC, which resolved 65% with 17 trials timed out, are left out."
+      },
+      {
+        "name": "claude-opus",
+        "agent": "Claude Code 2.1.311",
+        "harness": "Default",
+        "model": "claude-opus-5-5, effort high",
+        "rate": 0.66,
+        "margin": 0.09,
+        "pass": 0.7,
+        "timedOut": 5,
+        "cost": 120.4,
+        "hours": 17.3,
+        "tokens": 966000,
+        "where": "Modal",
+        "params": "version 2.1.311, effort high",
+        "runs": [
+          {
+            "job": "20261109T002622Z-1",
+            "date": "2026-11-09",
+            "where": "Modal",
+            "median": 5.6
+          },
+          {
+            "job": "20261111T060421Z-1",
+            "date": "2026-11-11",
+            "where": "Modal",
+            "median": 5.8
+          }
+        ],
+        "note": ""
+      },
+      {
+        "name": "copilot-sonnet",
+        "agent": "Copilot CLI 1.0.107",
+        "harness": "Default",
+        "model": "claude-sonnet-5.5, effort high",
+        "rate": 0.6512,
+        "margin": 0.0787,
+        "pass": 0.75,
+        "timedOut": 1,
+        "cost": 35.76,
+        "hours": 13.1,
+        "tokens": 651000,
+        "where": "Docker · Azure",
+        "params": "version 1.0.107, effort high",
+        "runs": [
+          {
+            "job": "20261115T213917Z-1",
+            "date": "2026-11-15",
+            "where": "Docker on Azure, Australia East",
+            "median": 4.0
+          },
+          {
+            "job": "20261115T214236Z-1",
+            "date": "2026-11-15",
+            "where": "Docker on Azure, New Zealand North",
+            "median": 4.1
+          },
+          {
+            "job": "20261115T214539Z-1",
+            "date": "2026-11-15",
+            "where": "Docker on Azure, Korea Central",
+            "median": 3.9
+          }
+        ],
+        "note": "The three runs ran at once, one Azure region each, and no trial needed running again. apache__pulsar-25953 has no test result in any of the three runs, and counts as unresolved. Its three runs on a PC, which resolved 64%, are left out."
+      },
+      {
+        "name": "squiz-gpt-6.1-sol",
+        "agent": "Copilot CLI 1.0.107",
+        "harness": "Peer review (squiz)",
+        "harnessDetail": "Peer review by squiz 0.3.2, claude-sonnet-5.5 reviewer at effort high",
+        "model": "gpt-6.1-sol, effort high",
+        "rate": 0.642,
+        "margin": 0.0833,
+        "pass": 0.7222,
+        "timedOut": 3,
+        "cost": 63.82,
+        "hours": 18.8,
+        "tokens": 1001000,
+        "where": "Docker · Azure",
+        "params": "version 1.0.107, effort high, squiz_version 0.3.2, reviewer_model claude-sonnet-5.5, reviewer_effort high",
+        "runs": [
+          {
+            "job": "20261115T114014Z-1",
+            "date": "2026-11-15",
+            "where": "Docker on Azure, Australia East",
+            "median": 8.1
+          },
+          {
+            "job": "20261115T114339Z-1",
+            "date": "2026-11-15",
+            "where": "Docker on Azure, New Zealand North",
+            "median": 7.6
+          },
+          {
+            "job": "20261115T114642Z-1",
+            "date": "2026-11-15",
+            "where": "Docker on Azure, Korea Central",
+            "median": 7.7
+          }
+        ],
+        "note": "squiz reviews each change with claude-sonnet-5.5 and its fixer answers the findings; the cost counts both, $20.26 of the $63.82 a run. The review stopped short on seven trials, when squiz took its state file's lock too late, and those patches were graded as they stood. Five trials have no test result and count as unresolved. The three runs ran at once, one Azure region each."
+      },
+      {
+        "name": "copilot-fusion-high",
+        "agent": "Copilot CLI 1.0.107",
+        "harness": "Default",
+        "model": "Fusion, tier high",
+        "rate": 0.6296,
+        "margin": 0.0864,
+        "pass": 0.6944,
+        "timedOut": 4,
+        "cost": 31.92,
+        "hours": 16.8,
+        "tokens": 828000,
+        "where": "Docker · Azure",
+        "params": "version 1.0.107, fusion_tier high",
+        "runs": [
+          {
+            "job": "20261114T124819Z-1",
+            "date": "2026-11-14",
+            "where": "Docker on Azure, Australia East",
+            "median": 5.2
+          },
+          {
+            "job": "20261114T125147Z-1",
+            "date": "2026-11-14",
+            "where": "Docker on Azure, New Zealand North",
+            "median": 5.5
+          },
+          {
+            "job": "20261114T125449Z-1",
+            "date": "2026-11-14",
+            "where": "Docker on Azure, Korea Central",
+            "median": 5.4
+          }
+        ],
+        "note": "The three runs ran at once, one Azure region each, and no trial needed running again. Its two patches for apache__hugegraph-3037, in the second and third runs, do not compile, and count as unresolved. Grading of apache__pulsar-25953 stopped before any test in the same two runs; graded once more from the same patch, the third run's failed its test and the second's stopped again, and both count as unresolved. Its run on Modal, which resolved 59%, and its two runs on a PC, which resolved 63%, are left out."
+      },
+      {
+        "name": "copilot-fusion",
+        "agent": "Copilot CLI 1.0.107",
+        "harness": "Default",
+        "model": "Fusion, tier standard",
+        "rate": 0.6235,
+        "margin": 0.088,
+        "pass": 0.6667,
+        "timedOut": 0,
+        "cost": 15.23,
+        "hours": 12.4,
+        "tokens": 850000,
+        "where": "Docker · Azure",
+        "params": "version 1.0.107",
+        "runs": [
+          {
+            "job": "20261113T223307Z-1",
+            "date": "2026-11-13",
+            "where": "Docker on Azure, Australia East",
+            "median": 5.2
+          },
+          {
+            "job": "20261113T223410Z-1",
+            "date": "2026-11-13",
+            "where": "Docker on Azure, New Zealand North",
+            "median": 4.8
+          },
+          {
+            "job": "20261113T223531Z-1",
+            "date": "2026-11-13",
+            "where": "Docker on Azure, Korea Central",
+            "median": 5.6
+          }
+        ],
+        "note": "The three runs ran at once, one Azure region each. Copilot CLI never started on 12 trials, refused by Copilot’s model router or out of time in setup, and those 12 ran again on a fresh VM. Its run on Modal, which resolved 62%, is left out.",
+        "label": "below"
+      },
+      {
+        "name": "copilot-gpt-6.1-sol",
+        "agent": "Copilot CLI 1.0.107",
+        "harness": "Default",
+        "model": "gpt-6.1-sol, effort high",
+        "rate": 0.6204,
+        "margin": 0.088,
+        "pass": 0.6667,
+        "timedOut": 1,
+        "cost": 44.06,
+        "hours": 14.8,
+        "tokens": 976000,
+        "where": "Docker · Azure",
+        "params": "version 1.0.107, effort high",
+        "runs": [
+          {
+            "job": "20261114T042619Z-1",
+            "date": "2026-11-14",
+            "where": "Docker on Azure, Australia East",
+            "median": 5.5
+          },
+          {
+            "job": "20261114T042923Z-1",
+            "date": "2026-11-14",
+            "where": "Docker on Azure, New Zealand North",
+            "median": 5.7
+          },
+          {
+            "job": "20261114T043249Z-1",
+            "date": "2026-11-14",
+            "where": "Docker on Azure, Korea Central",
+            "median": 5.9
+          }
+        ],
+        "note": "Grading stopped before any test on two trials, mikro-orm__mikro-orm-7799 in the first run and apache__pulsar-25953 in the third; graded once more from the same patch, both failed their tests. Its run on Modal, as copilot-gpt, which resolved 67%, is left out."
+      }
+    ],
+    "axis": {
+      "lo": 0.5,
+      "span": 0.3,
+      "labels": [
+        "50%",
+        "60%",
+        "70%",
+        "80%"
+      ]
+    },
+    "scatter": {
+      "maxCost": 130,
+      "yLo": 0.6,
+      "ySpan": 0.12,
+      "xTicks": [
+        0,
+        40,
+        80,
+        120
+      ],
+      "yLabels": [
+        "72%",
+        "66%",
+        "60%"
+      ]
+    },
+    "tab": "SWE-rebench"
+  },
+  "pro-hard51": {
+    "title": "pro-hard51",
+    "tab": "SWE-bench Pro",
+    "about": "SWE-bench Pro V2’s 51 hardest tasks, each describing the change in full and graded by its own hidden tests, with no model judging.",
+    "tasks": 51,
+    "axis": {
+      "lo": 0.6,
+      "span": 0.4,
+      "labels": [
+        "60%",
+        "80%",
+        "100%"
+      ]
+    },
+    "scatter": {
+      "maxCost": 45,
+      "yLo": 0.76,
+      "ySpan": 0.18,
+      "xTicks": [
+        0,
+        15,
+        30,
+        45
+      ],
+      "yLabels": [
+        "94%",
+        "85%",
+        "76%"
+      ]
+    },
+    "arms": [
+      {
+        "name": "copilot-opus",
+        "agent": "Copilot CLI 1.0.107",
+        "harness": "Default",
+        "model": "claude-opus-5.5, effort high",
+        "rate": 0.915,
+        "margin": 0.0686,
+        "pass": 0.9412,
+        "timedOut": 1,
+        "cost": 39.54,
+        "hours": 7.17,
+        "tokens": 818000,
+        "where": "Docker · Azure",
+        "params": "version 1.0.107, effort high",
+        "runs": [
+          {
+            "job": "20261119T113028Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, Australia East",
+            "median": 7.1
+          },
+          {
+            "job": "20261119T113342Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, New Zealand North",
+            "median": 6.9
+          },
+          {
+            "job": "20261119T113641Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, Korea Central",
+            "median": 5.9
+          }
+        ],
+        "note": "The three runs ran at once, one Azure region each, and no trial needed running again. 45 tasks were resolved in all three runs, and 48 in at least one. Every trial records a test result."
+      },
+      {
+        "name": "copilot-gpt-6.1-sol",
+        "agent": "Copilot CLI 1.0.107",
+        "harness": "Default",
+        "model": "gpt-6.1-sol, effort high",
+        "rate": 0.8497,
+        "margin": 0.0915,
+        "pass": 0.902,
+        "timedOut": 0,
+        "cost": 19.02,
+        "hours": 6.46,
+        "tokens": 873000,
+        "where": "Docker · Azure",
+        "params": "version 1.0.107, effort high",
+        "runs": [
+          {
+            "job": "20261119T045251Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, Australia East",
+            "median": 6.2
+          },
+          {
+            "job": "20261119T050349Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, New Zealand North",
+            "median": 7.0
+          },
+          {
+            "job": "20261119T050700Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, Korea Central",
+            "median": 7.0
+          }
+        ],
+        "note": "The three runs ran at once, one Azure region each, and no trial needed running again. 41 tasks were resolved in all three runs, and 46 in at least one. Four trials record no test result: each patch applied and the task’s tests ran, but none passed, so they count as unresolved."
+      },
+      {
+        "name": "copilot-fusion-high",
+        "agent": "Copilot CLI 1.0.107",
+        "harness": "Default",
+        "model": "Fusion, tier high",
+        "rate": 0.7974,
+        "margin": 0.1013,
+        "pass": 0.8431,
+        "timedOut": 1,
+        "cost": 22.31,
+        "hours": 14.5,
+        "tokens": 2921000,
+        "where": "Docker · Azure",
+        "params": "version 1.0.107, fusion_tier high",
+        "runs": [
+          {
+            "job": "20261119T063914Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, Korea Central",
+            "median": 17.0
+          },
+          {
+            "job": "20261119T064444Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, Australia East",
+            "median": 16.2
+          },
+          {
+            "job": "20261119T070232Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, New Zealand North",
+            "median": 16.8
+          }
+        ],
+        "note": "The three runs ran at once, one Azure region each. Two first attempts failed while their VMs were set up, before any agent ran, and ran again on fresh VMs. 38 tasks were resolved in all three runs, and 43 in at least one. Eight trials record no test result: each patch applied and the task’s tests ran, but none passed, so they count as unresolved."
+      },
+      {
+        "name": "copilot-sonnet",
+        "agent": "Copilot CLI 1.0.107",
+        "harness": "Default",
+        "model": "claude-sonnet-5.5, effort high",
+        "rate": 0.7908,
+        "margin": 0.098,
+        "pass": 0.8431,
+        "timedOut": 2,
+        "cost": 13.58,
+        "hours": 5.83,
+        "tokens": 508000,
+        "where": "Docker · Azure",
+        "params": "version 1.0.107, effort high",
+        "runs": [
+          {
+            "job": "20261119T124818Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, New Zealand North",
+            "median": 3.6
+          },
+          {
+            "job": "20261119T132501Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, Australia East",
+            "median": 3.9
+          },
+          {
+            "job": "20261119T132530Z-1",
+            "date": "2026-11-19",
+            "where": "Docker on Azure, Korea Central",
+            "median": 3.6
+          }
+        ],
+        "note": "Each run started once its region’s Opus run had finished. The Australia East run failed while its VM was set up, before any agent ran, and ran again on a fresh VM. 37 tasks were resolved in all three runs, and 43 in at least one. Three trials, all of flipt-c1728053, record no test result: each patch applied but left the package failing to build, so they count as unresolved.",
+        "label": "left"
+      }
+    ]
+  }
+}

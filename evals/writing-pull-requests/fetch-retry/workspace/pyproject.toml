@@ -1,0 +1,29 @@
+[project]
+name = "swe-drill"
+version = "0.1.0"
+description = "Measures and compares how well coding harnesses do specific kinds of coding work."
+readme = "README.md"
+license = "MIT"
+requires-python = "==3.12.*"
+dependencies = [
+    "harbor==0.25.0",
+    "pygments>=2.17,<3.0",
+    "unidiff>=0.7,<1.0",
+]
+
+[project.optional-dependencies]
+modal = [
+    "harbor[modal]==0.25.0",
+]
+
+[project.scripts]
+swe-drill = "swe_drill.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.6,<0.14.0"]
+build-backend = "uv_build"

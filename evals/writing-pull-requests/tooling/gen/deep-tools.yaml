@@ -1,0 +1,52 @@
+# The case. It starts from ../../deep-tools/workspace/.
+description: >
+  A spec change that narrows a grant, leaving several passages elsewhere in the
+  spec, and in the shipped charter, still describing the old grant. From squiz
+  #532: `deep` lost its shell, and What did not change named only § 4
+  Confinement, while § 9, the `pi` adapter, the reviewer session and the
+  charter still said `deep` grants one, which drew a high and a medium finding.
+expected_outcome: >
+  Intent gives the owner's decision (no sandbox in the first version, held as
+  #529) and that `deep` now grants single-command tools and no shell, without
+  hiding that the test command still runs the project's code unconfined. What
+  changed covers M11, § 4 Depth and § 8 What ships. Every passage still saying
+  `deep` grants a shell is either fixed on the branch or named, findably, in
+  What did not change: § 4 The reviewer session's note, § 4 Confinement's
+  `deep` paragraph, refusals and shell-group record, the `pi` adapter's grant,
+  the Copilot adapter's grant paragraph, § 4 Charter's verify rule,
+  `charter.md`'s line, and § 9's `depth` row. No Verification beyond saying
+  there is nothing to run.
+branch: specs/m11-typed-tools
+commit: Grant depth deep typed tools instead of bash, and hold the sandbox for later
+prompt: |
+  Read AGENTS.md first.
+
+  The owner decided on 2026-10-06 that a reviewer which runs the project's code
+  needs an operating-system sandbox, filed as #529, and then that the first
+  version ships `deep` without one. The sandbox is held at P2, and `deep` is
+  narrowed instead.
+
+  On this branch I changed the specs for that:
+
+  - M11 in `docs/specs/milestones.md`: `deep` now grants tools that each run one
+    command with fixed arguments, and no shell. `run_tests` takes no argument
+    and runs the configured test command; `git_log_search`, `git_blame` and
+    `git_show` take a term, a file and line, and a commit, and run only that
+    `git` subcommand. The reviewer's environment carries no GitHub credential.
+    A new criterion has § 4 Confinement say what risk remains.
+  - § 4 Depth: the `deep` row and the rule under the table.
+  - § 8 What ships: `deep` at P1 as those tools, and the sandbox as a P2 row.
+  - What `deep` loses is running arbitrary code to test a hypothesis. Running
+    the tests and reading history cover most of what a review needs.
+
+  § 4 Confinement still describes a `deep` shell. M11 rewrites it when it
+  builds the tools, and states the remaining risk there. The configuration
+  refuses `deep` today, so no round runs at it.
+
+  It is a spec change only, so there was nothing to run.
+
+  Open a pull request for this branch.
+criteria:
+  - name: shell-passage-unnamed
+    description: "Question: does the PR leave any passage that still says `deep` grants a shell neither changed on the branch nor named in the body? The passages, as the workspace stands after the change: § 4 The reviewer session's 'Only `deep` grants a shell'; § 4 Confinement's `deep` paragraph ('At `deep` the grant includes `bash`'), its refused calls and its shell-group record; the `pi` adapter's 'deep adds `bash`'; the Copilot adapter's grant paragraph on what `deep` would need; § 4 Charter's 'run the test where the depth grants a shell'; `charter.md`'s 'Where you were given a shell'; § 9 Configuration's `depth` row, '`deep` adds the shell'. Check each against the diff and the body. Answer yes, quoting what the body says instead, if any one is neither changed nor named by its section or a description a reader could find it from. Naming Confinement alone is yes; a blanket line such as 'other passages still mention the shell' is yes. The Adapters paragraph saying Copilot's detached shells matter at `deep` alone may be named too; leaving it out is not a defect."
+tables_ok: false

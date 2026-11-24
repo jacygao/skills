@@ -1,0 +1,57 @@
+# The case. It starts from ../../fix-after-review/workspace/.
+description: >
+  An update case: a review finding is fixed in a second commit, and the open
+  pull request's body must be brought up to the new head. From squiz #251: the
+  body named `squiz resolve` and a decision the fix commit rewrote, and the
+  reviewer asked for the description to be corrected as well as the note.
+expected_outcome: >
+  pr/251.md rewritten in place: Intent names only `squiz threads` and `squiz
+  reply`, and the Decisions bullet says what the fix made it say, that an
+  install lets the binary be found by name, not which commands it dispatches.
+  No "Updated after review" section, no account of the finding or of what the
+  body said before, no test count, and the rest of the body left as true as it
+  was.
+branch: notes/install-puts-bin-on-path
+commit: Record that a marketplace install reaches the Bash tool's PATH and the hook
+fix_commit: Name the commands squiz has, not one it does not
+output: pr/251.md
+prompt: |
+  Read AGENTS.md first.
+
+  This branch is #251. It records in
+  `docs/notes/the-hook-shell-does-not-get-the-plugin-bin-on-path.md` what a
+  marketplace install does, for #54: I installed squiz at `local` scope from
+  the repository as its own marketplace, ran one subagent in a new session
+  with no `--plugin-dir`, and read the stream with `--include-hook-events
+  --output-format stream-json --verbose` plus `--debug-file`. The Bash tool's
+  `PATH` held the plugin's `bin/`, and the `SubagentStop` hook ran and exited 0.
+  I removed the install, the marketplace and the `.claude/settings.local.json`
+  it created afterwards. `pr/251.md` is the pull request as I opened it.
+
+  The reviewer opened one thread on the note, at the first commit:
+
+  > **[P3] Remove the nonexistent `squiz resolve` command from the new
+  > decision.** Current § 6 lists `hook`, `threads`, and `reply`, and
+  > `src/cli.ts` dispatches only those names. Running `squiz resolve` reaches
+  > the unknown-command path (`no command "resolve". The commands are: hook,
+  > threads, reply`). #54's older wording still mentioned resolve, but copying
+  > it into a new present-tense finding incorrectly says § 6 asks the coding
+  > agent to run it and that installation makes it usable. `command -v squiz`
+  > establishes lookup of the binary, not availability of arbitrary
+  > subcommands. Name the current `threads` and `reply` commands here and in
+  > the PR description; this does not require adding a resolve command.
+
+  It was right: `src/cli.ts` has `const commands = ["hook", "threads",
+  "reply"]`, and the name came from #54's wording. I pushed a second commit,
+  "Name the commands squiz has, not one it does not", which rewrites that
+  Decisions bullet, and replied on the thread. I left #54's own body as it is,
+  since the issue is a record of what was asked. `npx tsc --noEmit` is still
+  clean; no source file changed.
+
+  Update the pull request's description for the new head.
+criteria:
+  - name: stale-claim-kept
+    description: "Question: does the pull request still say something the fix commit made false: that § 6, M3 or the note has the coding agent run `squiz resolve`, or that the note's decision is that the commands themselves 'need nothing for an install', rather than that the binary is found by name? Quote the line. A mention of `resolve` only to say squiz has no such command, or that #54 still names it, does not count."
+  - name: review-history-in-body
+    description: "Question: does the body narrate the review or the fix as history: an 'Update', 'Changes since review' or 'Addressed' section or line, a mention of the finding or the reviewer, what an earlier version of the body or the note said, or the second commit's story? Quote it. What the note itself records, such as its account of an earlier instrument that observed nothing, is the note's content and does not count."
+tables_ok: false
