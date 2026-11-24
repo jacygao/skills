@@ -1,10 +1,10 @@
 # triaging-issues
 | | With the skill | No skill |
 |---|---|---|
-| Mean grade | 79% | 93% |
-| Cases passed | 0 of 3 | 1 of 3 |
+| Mean grade | 94% | 86% |
+| Cases passed | 1 of 3 | 0 of 3 |
 
-Graded on 2026-11-24 against the skill at `40c1822`, from 6 and 7 graded trials. The cases are in [`evals/triaging-issues/`](../../evals/triaging-issues/).
+Graded on 2026-11-24 against the skill at `ad7c416`, from 9 and 9 graded trials. The cases are in [`evals/triaging-issues/`](../../evals/triaging-issues/).
 For a project that has shipped and tracks releases in GitHub milestones. It
 gives open issues a priority and a release milestone, and splits a release's
 issues until each fits one pull request.
@@ -35,7 +35,7 @@ waits in `Backlog`. Add a section only to change them.
 
 | | With the skill | No skill |
 |---|---|---|
-| Mean grade | 79% | 93% |
-| Cases passed | 0 of 3 | 1 of 3 |
+| Mean grade | 94% | 86% |
+| Cases passed | 1 of 3 | 0 of 3 |
 
-Graded on 2026-11-24 against the skill at `40c1822`, from 6 and 7 graded trials. The cases are in [`evals/triaging-issues/`](../../evals/triaging-issues/).
+Graded on 2026-11-24 against the skill at `ad7c416`, from 9 and 9 graded trials. The cases are in [`evals/triaging-issues/`](../../evals/triaging-issues/).
