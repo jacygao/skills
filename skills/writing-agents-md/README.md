@@ -25,4 +25,4 @@ either file.
 | Mean grade | 96% | 50% |
 | Cases passed | 2 of 3 | 0 of 3 |
 
-Graded on 2026-11-28 against the skill on the `writing-agents-md` branch, from 9 and 8 graded trials. The cases are in [`evals/writing-agents-md/`](../../evals/writing-agents-md/).
+Graded on 2026-11-28 against the skill at `ce7131b`, from 9 and 8 graded trials. The cases are in [`evals/writing-agents-md/`](../../evals/writing-agents-md/).
