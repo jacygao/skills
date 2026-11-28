@@ -10,7 +10,8 @@ Claude Code or GitHub Copilot.
 | `writing-pull-requests` | Writes a pull request body and keeps it true | Every project | 87% | 74% | [README](skills/writing-pull-requests/README.md) |
 | `writing-specs` | Writes and edits a specification | Every project | 99% | 61% | [README](skills/writing-specs/README.md) |
 | `writing-notes` | Records a finding in `docs/notes/` | Every project | 100% | 35% | [README](skills/writing-notes/README.md) |
-| `writing-rules` | Writes `AGENTS.md`, `CLAUDE.md` and rule files | Every project | 85% | 77% | [README](skills/writing-rules/README.md) |
+| `writing-agents-md` | Decides what goes in `AGENTS.md` and what goes elsewhere | Every project | 100% | 61% | [README](skills/writing-agents-md/README.md) |
+| `writing-rules` | Words a rule in `AGENTS.md`, `CLAUDE.md` or a rule file | Every project | 85% | 77% | [README](skills/writing-rules/README.md) |
 | `writing-tests` | Writes a test, test first | Every project | 99% | 63% | [README](skills/writing-tests/README.md) |
 | `working-issues` | Works issues through subagents into verified pull requests | Every project | 75% | 60% | [README](skills/working-issues/README.md) |
 | `planning-milestones` | Turns a planned milestone into an issue tree | Built from `docs/specs/milestones.md` | 100% | 50% | [README](skills/planning-milestones/README.md) |
@@ -48,7 +49,8 @@ for every project.
 
 Each skill's README gives the lines to add to the project's `AGENTS.md`.
 Rules files and `CLAUDE.md` content cannot ship in a plugin, so a project keeps
-its `.claude/rules/` itself. Load `writing-rules` before editing any of them.
+its `.claude/rules/` itself. Load `writing-agents-md` before adding a section
+to `AGENTS.md`, and `writing-rules` before writing any rule.
 
 ## Evals
 

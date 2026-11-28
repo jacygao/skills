@@ -1,0 +1,10 @@
+# The skill against no skill, on every case: vally experiment run skill.experiment.yaml
+name: writing-agents-md-skill
+evals: ["*/eval.yaml"]
+vary: ["/environment/skills"]
+baseline: no-skill
+variants:
+  with-skill: {}
+  no-skill:
+    environment:
+      skills: []
