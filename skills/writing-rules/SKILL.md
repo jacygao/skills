@@ -1,6 +1,6 @@
 ---
 name: writing-rules
-description: How an instruction file for agents is written - a rule in .claude/rules/, AGENTS.md or CLAUDE.md. Load BEFORE writing or editing one.
+description: How a rule for agents is worded, in .claude/rules/, AGENTS.md or CLAUDE.md. Load BEFORE writing or editing a rule. For what belongs in AGENTS.md or CLAUDE.md, load writing-agents-md.
 user-invocable: true
 ---
 

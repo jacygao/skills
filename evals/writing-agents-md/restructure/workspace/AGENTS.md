@@ -1,0 +1,158 @@
+# Working in this repository
+
+The skills named here come from the `skills` plugin of the `jacygao/skills`
+marketplace, which `.claude/settings.json` enables. They hold the
+method; this file holds what is specific to squiz, and they read it from here.
+
+## Specs
+
+**Load the `skills:writing-specs` skill before writing or editing anything under
+`docs/specs/`.** Every time, without being asked.
+
+`docs/specs/review-harness-spec.md` is the specification. It says what squiz
+does, and fixes no file layout: where code goes in `src/` is a choice each change
+makes.
+
+**A spec's version number changes once a release.** The pull request that sets
+the release's version bumps it. Every other pull request leaves it alone, so
+that two of them never conflict on the version line.
+
+## Language
+
+**Write erasable TypeScript only:** no `enum`, no parameter properties, no
+namespaces. A union of string literals stands where an enum would. Node strips
+the types and runs the `.ts` files as they are, and it cannot strip those.
+`tsconfig.json` sets `erasableSyntaxOnly`, so `npm run typecheck` refuses them.
+
+## Configuration
+
+**When adding a setting, put it in `.squiz.json`, not in an environment
+variable.** Every squiz process reads `.squiz.json`, so the hook, the round host
+and the commands all see the same value. A variable is easy to forget, and
+reaches only the processes its run started. § 10 Configuration of the
+specification lists the settings.
+
+## Human intervention
+
+**Design for the unattended path, and record a person's intervention instead of
+building for it.** A finding or a bug that needs a person to reset, force-push,
+edit the pull request or touch squiz's files mid-review goes on #819's list, not
+into the code. The one exception is squiz reporting a review of a commit it did
+not review, which is fixed. § 11 Human intervention of the specification states
+the rule and what squiz already handles.
+
+## Notes
+
+**Load the `skills:writing-notes` skill before writing or editing anything under
+`docs/notes/`.** Every time, without being asked.
+
+`docs/notes/` holds durable findings: what earlier work established, recorded so
+that it is read rather than re-derived.
+
+## Checks
+
+```bash
+npm run typecheck && npm test
+```
+
+Squiz has no build step. Node strips the types and runs the `.ts` files as they
+are, so nothing checks the types unless `npm run typecheck` runs. CI runs both.
+
+Several suites running at once on one machine fail the timing-sensitive tests.
+While agents run theirs, run only the test files a change touches.
+
+## Silent failures
+
+- **The hook exits 0 on every failure path, by design.** A hook that throws looks
+  exactly like a branch with no pull request. A test or a brief names what tells
+  the two apart.
+- **Squiz resolves a review by `git rev-parse --show-toplevel`.** Two subagents
+  working in one tree read as one, and a subagent dispatched by path is reviewed
+  against the tree it was dispatched from. Dispatch with `isolation: "worktree"`.
+
+## The reviewer
+
+Squiz reviews its own pull requests. Once a pull request is open, run
+`squiz review <number>` and work it to exit 0, or to exit 3 with only `low`
+threads open. It prints the open threads: fix what applies, answer each with
+`squiz reply <id> <text>`, push, and run it again.
+
+Squiz reviews a subagent's work whether or not the subagent ran the command. The
+hook queues a review when the subagent finishes, and the session that dispatched
+it is woken with the result.
+
+## Running agents here
+
+- **Load squiz from a checkout outside the repository.** With
+  `--plugin-dir ./` every worktree is inside the loaded plugin, and auto mode
+  refuses a subagent's `Write` there. Make the checkout once, and start every
+  session from it:
+
+  ```bash
+  git worktree add --detach ../squiz-plugin origin/main     # once
+  claude --plugin-dir ../squiz-plugin
+  ```
+
+- **Merged is not loaded until the checkout is refreshed.** Refresh it after
+  each merge:
+
+  ```bash
+  git fetch -q origin && git -C ../squiz-plugin checkout -q --detach origin/main
+  ```
+
+  Each firing of the hook runs `bin/squiz` as a new process, which reads `src/`
+  from the checkout, so a refreshed `src/` or `bin/` reaches the next round
+  without a restart. `hooks/hooks.json` is read when the session starts, so a
+  change to it waits for a restart (unverified).
+
+- **Run only the checkout's squiz here, never an installed release beside it.**
+  An installed squiz still enabled fires its own hooks on every stop, so a
+  round can run on the release's code. Turn it off for this repository:
+
+  - **Claude Code:** `.claude/settings.local.json` holds
+    `{ "enabledPlugins": { "squiz@squiz": false } }`. It applies to this
+    repository alone, so other projects keep the release.
+  - **Copilot:** it has no per-project switch. Keep the release disabled with
+    `copilot plugin disable squiz@squiz`, and start a session with
+    `copilot --plugin-dir ../squiz-plugin --experimental`.
+  - **A command typed by hand** runs the `squiz` on `PATH`. Point
+    `~/.local/bin/squiz` at `../squiz-plugin/bin/squiz`, and run `squiz doctor`
+    to see which one answers.
+
+**Load the `skills:working-issues` skill before dispatching any issue to
+subagents.** Every time, without being asked.
+
+## Issues and releases
+
+**A release is a GitHub milestone named by its version**, such as `0.1.0`. It
+holds the issues that ship in that release. The `Backlog` milestone holds every
+triaged issue that no release has taken yet. Each open issue carries one
+milestone and one priority label:
+
+- **`P0`** blocks the release it is in: a user on the default setup gets no
+  review, or a wrong one, in ordinary use.
+- **`P1`** is wanted in the next release or the one after: real users, or squiz's
+  own CI, will hit it.
+- **`P2`** waits in `Backlog` until a release's theme pulls it in.
+
+Each open issue also carries one or more area labels, naming the part of squiz
+it touches:
+
+- **`harness`**: squiz's own loop, round host, review, summary and commands.
+- **`claude-code`**: Claude Code as the coding agent, its hooks, socket and
+  settings.
+- **`copilot`**: the GitHub Copilot CLI, as the coding agent or the reviewer.
+- **`pi`**: the `pi` reviewer adapter.
+
+The version is in `package.json`, `package-lock.json`,
+`.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`.
+
+**Load the `skills:triaging-issues` skill before triaging issues or planning
+a release, and the `skills:cutting-releases` skill before cutting one.**
+Every time, without being asked.
+
+## Pull requests and issues
+
+**Load the `skills:writing-pull-requests` skill before running `gh pr create`, and
+the `skills:writing-issues` skill before running `gh issue create`.** Every time,
+without being asked.

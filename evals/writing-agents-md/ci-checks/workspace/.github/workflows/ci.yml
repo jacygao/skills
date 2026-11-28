@@ -1,0 +1,210 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.areas.outputs.web }}
+      mobile: ${{ steps.areas.outputs.mobile }}
+      api: ${{ steps.areas.outputs.api }}
+      web_v2: ${{ steps.areas.outputs.web_v2 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Test the area rules
+        run: bash .github/scripts/ci-areas.test.sh
+
+      - name: Work out which jobs this change needs
+        id: areas
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            # A pull request checks out its merge commit, whose first parent is the base branch.
+            # Without --no-renames, a moved file lists only where it went, not where it came from.
+            git diff --no-renames --name-only HEAD^1 HEAD | bash .github/scripts/ci-areas.sh | tee -a "$GITHUB_OUTPUT"
+          else
+            printf 'web=true\nmobile=true\napi=true\nweb_v2=true\n' | tee -a "$GITHUB_OUTPUT"
+          fi
+
+  build_and_test:
+    name: Build and test
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build webapp
+        run: npm run build --workspace=ux/webapp
+
+      - name: Build website
+        run: npm run build --workspace=ux/website
+
+      - name: Build Chrome extension
+        run: npm run build --workspace=ux/chrome-extension
+
+      - name: Type-check core without the DOM
+        run: npm run typecheck --workspace=ux/core
+
+      - name: Test core
+        run: npm test --workspace=ux/core
+
+      - name: Test shared components
+        run: npm test --workspace=ux/shared
+
+      - name: Test webapp
+        run: npm test --workspace=ux/webapp -- --run
+        timeout-minutes: 10
+
+      - name: Test e2e
+        run: npm test --workspace=e2e
+        timeout-minutes: 10
+
+  web_app_v2:
+    name: Web app v2
+    needs: changes
+    if: needs.changes.outputs.web_v2 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check web app v2
+        run: npm run typecheck --workspace=ux/webapp-v2
+
+      - name: Test web app v2
+        run: npm test --workspace=ux/webapp-v2
+        timeout-minutes: 10
+
+      - name: Build web app v2
+        run: npm run build --workspace=ux/webapp-v2
+
+  mobile_app:
+    name: Mobile app
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check storage
+        run: npm run typecheck --workspace=ux/storage
+
+      - name: Check storage's bundled migrations match its SQL files
+        run: npm run db:check --workspace=ux/storage
+
+      - name: Test storage
+        run: npm test --workspace=ux/storage
+
+      - name: Type-check mobile app
+        run: npm run typecheck --workspace=ux/mobileapp
+
+      - name: Test mobile app
+        run: npm test --workspace=ux/mobileapp
+        timeout-minutes: 10
+
+      - name: Bundle mobile app for iOS and Android
+        run: npm run export --workspace=ux/mobileapp
+
+  content_api_tests:
+    name: Content API tests
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    services:
+      cosmosdb:
+        image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-latest
+        env:
+          PROTOCOL: https
+        ports:
+          - 8081:8081
+        options: >-
+          --health-cmd "curl -fs http://localhost:8080/ready"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 36
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build content API
+        run: dotnet build api/content
+
+      - name: Unit test content API
+        run: dotnet test api/ContentApi.UnitTests
+
+      - name: Check the emulator serves HTTPS
+        run: curl -fsk --retry 12 --retry-delay 5 --retry-all-errors -o /dev/null https://localhost:8081/
+
+      - name: Integration test content API against the emulator
+        run: dotnet test api/ContentApi.IntegrationTests
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start the sync test host on the emulator
+        run: |
+          dotnet build api/ContentApi.SyncTestHost
+          nohup dotnet run --no-build --project api/ContentApi.SyncTestHost --urls http://localhost:5080 > sync-test-host.log 2>&1 &
+          curl -fs --retry 30 --retry-delay 2 --retry-all-errors -o /dev/null http://localhost:5080/api/ready
+
+      - name: Test the sync client against the content API
+        run: npm run test:api --workspace=ux/storage
+        env:
+          CONTENT_API_URL: http://localhost:5080/api
+        timeout-minutes: 5
+
+      - name: Show the sync test host's log
+        if: failure()
+        run: cat sync-test-host.log
