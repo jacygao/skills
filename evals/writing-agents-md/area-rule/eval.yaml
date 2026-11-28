@@ -1,4 +1,4 @@
-# Expected: .claude/rules/extension-content.md gains the rule to use px, not rem, in the injected card. AGENTS.md's Pitfalls section gains nothing.
+# Expected: .claude/rules/extension-content.md, or a new rule file scoped to the content script, gains the rule to use px, not rem, in the injected card. AGENTS.md's Pitfalls section gains nothing.
 name: writing-agents-md-area-rule
 description: "Asked to stop a trap in one area of the code from recurring, the agent puts the rule in the rule file scoped to that area, even though AGENTS.md already has a Pitfalls section of the same kind. From sowie, whose AGENTS.md carries the card's styling pitfalls into every session."
 defaults:
@@ -29,9 +29,6 @@ stimuli:
       - name: skill-loaded
         type: skill-invocation
         config: { required: [writing-agents-md] }
-      - name: rule-in-a-rule-file
-        type: file-matches
-        config: { path: .claude/rules/extension-content.md, pattern: "\\brem\\b", negate: false }
       - name: not-in-agents-md
         type: file-matches
         config: { path: AGENTS.md, pattern: "\\brem\\b", negate: true }

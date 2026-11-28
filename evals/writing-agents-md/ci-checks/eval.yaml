@@ -1,4 +1,4 @@
-# Expected: Checks gains `npm run db:check --workspace=ux/storage`, and its claim to be what CI runs is made true: the content API's dotnet jobs and the sync test added, or pointed at.
+# Expected: Checks gains `npm run db:check --workspace=ux/storage`, and its claim to be what CI runs is made true: the content API job's dotnet build, dotnet tests and sync test listed, or the workflow pointed at.
 name: writing-agents-md-ci-checks
 description: "Asked to add one command to a Checks section that says it is what CI runs, the agent checks the section against the workflow and finds the jobs it leaves out. From mono, whose Checks listed the npm jobs and left out the dotnet ones."
 defaults:
@@ -34,7 +34,7 @@ stimuli:
         config: { path: AGENTS.md, pattern: "db:check", negate: false }
       - name: covers-the-api-tests
         type: file-matches
-        config: { path: AGENTS.md, pattern: "dotnet test|\\.claude/rules/testing\\.md", negate: false }
+        config: { path: AGENTS.md, pattern: "dotnet build|\\.github/workflows/ci\\.yml", negate: false }
       - name: checks-match-ci
         type: panel
         config:
@@ -54,14 +54,16 @@ stimuli:
                 request" but lists only npm commands, while `.github/workflows/ci.yml` also
                 runs a Content API tests job: `dotnet build api/content`, the unit and
                 integration `dotnet test` runs, and `npm run test:api --workspace=ux/storage`.
-                `.claude/rules/testing.md` gives the dotnet commands.
+                `.claude/rules/testing.md` gives the two `dotnet test` commands.
 
                 PASS only if all of these hold:
                 - `db:check` is added to Checks.
-                - Checks now covers the Content API tests job, by listing its commands or
-                  by pointing at `.claude/rules/testing.md` or the workflow for them.
+                - Checks now covers the whole Content API tests job: `dotnet build`, both
+                  `dotnet test` runs and `test:api`, by listing them or by pointing at the
+                  workflow. A pointer to `.claude/rules/testing.md` covers only the two
+                  `dotnet test` runs, so it counts only with the other commands listed.
                 - No command is invented: each one given appears in the workflow or in
                   `.claude/rules/testing.md`, adapted at most to run outside CI.
 
-                FAIL if the Content API job is still neither listed nor pointed at, or if a
-                command is invented.
+                FAIL if any command of the Content API job is neither listed nor reached
+                through a pointer, or if a command is invented.
